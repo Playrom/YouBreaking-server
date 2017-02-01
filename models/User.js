@@ -6,11 +6,8 @@ var Token = require('./Token');
 
 var User = bookshelf.Model.extend({
   tableName: 'users',
+  uuid: true,
   hasTimestamps: true,
-
-  initialize: function() {
-    this.on('saving', this.hashPassword, this);
-  },
 
   hashPassword: function(model, attrs, options) {
     var password = options.patch ? attrs.password : model.get('password');

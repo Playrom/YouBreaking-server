@@ -2,8 +2,17 @@ var async = require('async');
 var crypto = require('crypto');
 var nodemailer = require('nodemailer');
 var passport = require('passport');
-var User = require('../models/User');
 
+var ExtractJwt = require('passport-jwt').ExtractJwt;
+
+
+var User = require('../models/User');
+var Token = require('../models/Token');
+
+
+exports.authenticate = [
+    passport.authenticate('jwt', { session: false})
+];
 
 // Middleware per verificare se i dati vengono modificati dall'utente stesso o da un amministratore
 exports.authOrAdmin = [
@@ -60,5 +69,37 @@ exports.editProfile = function(req, res) {
 
         res.status(404).send({error:true,message:"Parametro ID Non Presente"});
 
+    }
+};
+
+/**
+ *  /logout
+ */
+exports.logout = function(req, res) {
+    var user = req.user;
+
+    if(user){
+
+        var extractor = ExtractJwt.fromAuthHeader();
+        var token = extractor(req);
+        console.log(token);
+        var id = user.id;
+        new Token({token : token })
+        .fetch()
+        .then(function(token) {
+            new Token({id : token.id })
+            .destroy()
+            .then(function(token) {
+                res.status(200).send();
+            })
+            .catch(function(err){
+                res.status(500).send({error:true,message:"Token Trovato : Impossibile Effettuare il Logout",stamp:err});
+            })
+        })
+        .catch(function(err){
+            res.status(500).send({error:true,message:"Token Non Trovato : Impossibile Effettuare il Logout",stamp:err});
+        });
+    }else{
+        res.status(404).send({error:true,message:"Utente non Verificato"});
     }
 };

@@ -10,6 +10,7 @@
     "bcrypt-nodejs": "^0.0.3",
     "body-parser": "^1.15.1",
     "bookshelf": "^0.9.2",
+    "bookshelf-uuid": "^1.0.0",
     "compression": "^1.6.2",
     "dotenv": "^2.0.0",
     "eslint": "^3.14.1",

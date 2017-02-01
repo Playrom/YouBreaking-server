@@ -119,80 +119,95 @@ passport.use(new FacebookTokenStrategy({
         
         var json = JSON.parse(body); // Genero un oggetto aprtendo dalla risposta di facebook
 
+        console.log(profile);
+
         new User({ facebook: profile.id }) // Genero un nuovo modello partendo dal id preso da facebook
           .fetch()
           .then(function(user) {
 
-            var access_token = json.access_token;
-            user.set('facebook_token', access_token);
-            user.save().then(function(user) {
-
-            });
+            console.log("User Fetched From Profile Facebook");
+            console.log(user);
 
             if (user) { // Se l'utente esiste già allora non devo creare nulla, solo generare il Token JWT
-              var jwt = require('jsonwebtoken');
-              var token = jwt.sign(user.toJSON(), cfg.jwtSecret);
-              var arr = {
-                token : token,
-                error : false
-              }
 
-              var t = new Date();
-              t.setSeconds(t.getSeconds() + (60*60*24*7)); // Sette Giorni
-              var exp = t.toISOString().slice(0, 19).replace('T', ' ');
-
-              new Token({token : token , user_id : user.toJSON().id, exp : exp}).save().then(function(token){
-
-              });
-
-              return done(null, arr);
-            }
-            
-            // Se  l'utente non esiste già allora devo creare un utente
-            new User({ email: profile._json.email })
-              .fetch()
-              .then(function(user) {
-                if (user) { // Se esiste già una email per questo utente genero un errore
-                  req.flash('error', { msg: user.get('email') + ' is already associated with another account.' });
-                  return done();
+              var access_token = json.access_token;
+              user.set('facebook_token', access_token);
+              user.save().then(function(user) {
+                var jwt = require('jsonwebtoken');
+                var token = jwt.sign(user.toJSON(), cfg.jwtSecret);
+                var arr = {
+                  token : token,
+                  error : false
                 }
-                
-                user = new User();
-                user.set('name', profile.name.givenName + ' ' + profile.name.familyName);
-                user.set('email', profile._json.email);
-                user.set('picture', 'https://graph.facebook.com/' + profile.id + '/picture?type=large');
-                user.set('facebook', profile.id);
 
-                var access_token = json.access_token;
-                console.log(access_token);
+                var t = new Date();
+                t.setSeconds(t.getSeconds() + (60*60*24*7)); // Sette Giorni
+                var exp = t.toISOString().slice(0, 19).replace('T', ' ');
 
-                user.set('facebook_token', access_token);
-
-                user.save().then(function(user) {
-
-                  var jwt = require('jsonwebtoken');
-                  var token = jwt.sign(user.toJSON(), cfg.jwtSecret);
-                  var arr = {
-                    token : token,
-                    error : false
-                  }
-
-                  var t = new Date();
-                  t.setSeconds(t.getSeconds() + (60*60*24*7)); // Sette Giorni
-                  var exp = t.toISOString().slice(0, 19).replace('T', ' ');
-
-                  new Token({token : token , user_id : user.toJSON().id , exp:exp}).save().then(function(token){
-
-                  });
-
-                  done(null, arr);
-
-                })
-                .catch(function(err) {
-                  console.error(err);
+                new Token({token : token , user_id : user.toJSON().id, exp : exp}).save().then(function(token){
+                  return done(null, arr);
                 });
 
               });
+
+            }else{
+            
+              // Se  l'utente non esiste già allora devo creare un utente
+              new User({ email: profile._json.email })
+                .fetch()
+                .then(function(user) {
+
+                  console.log("USER TESTATO CON EMAIL");
+                  console.log(user);
+
+                  if (user) { // Se esiste già una email per questo utente genero un errore
+                    req.flash('error', { msg: user.get('email') + ' is already associated with another account.' });
+                    console.log("Email già Presente");
+                    return done();
+                  }else{
+
+                    var access_token = json.access_token;
+                    console.log(access_token);
+
+                    new User({
+                      name : profile.name.givenName + ' ' + profile.name.familyName,
+                      email : profile._json.email,
+                      picture : 'https://graph.facebook.com/' + profile.id + '/picture?type=large',
+                      facebook : profile.id,
+                      facebook_token : accessToken
+                    })
+                    .save()
+                    .then(function(user) {
+
+                      console.log("USER DEFINITIVO");
+                      console.log(user.toJSON());
+
+                      var jwt = require('jsonwebtoken');
+                      var token = jwt.sign(user.toJSON(), cfg.jwtSecret);
+                      var arr = {
+                        token : token,
+                        error : false
+                      }
+
+                      var t = new Date();
+                      t.setSeconds(t.getSeconds() + (60*60*24*7)); // Sette Giorni
+                      var exp = t.toISOString().slice(0, 19).replace('T', ' ');
+
+                      new Token({token : token , user_id : user.toJSON().id , exp:exp}).save().then(function(token){
+                        return done(null, arr);
+                      });
+
+                    })
+                    .catch(function(err) {
+                      console.error(err);
+                      return done(err,null);
+                    });
+
+                  }
+
+              });
+
+            }
           });
         
 

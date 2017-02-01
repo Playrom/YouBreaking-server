@@ -106,7 +106,7 @@ app.get(
         })(req, res);
   }
 );
-app.post('/api/auth/logout', userController.ensureAuthenticated, userController.logout);
+app.post('/api/auth/logout', profileController.authenticate, profileController.logout);
 app.get('/api/profile', passport.authenticate('jwt', { session: false}), profileController.getProfile);
 app.put('/api/profile/:id', profileController.authOrAdmin, profileController.editProfile);
 
