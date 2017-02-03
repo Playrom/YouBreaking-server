@@ -1,9 +1,9 @@
 exports.up = function(knex, Promise) {
   return Promise.all([
     knex.schema.createTable('tokens', function(table) {
-      table.increments();
+      table.uuid('id');
       table.text('token','longtext');
-      table.integer('user_id').unsigned().references('users.id');
+      table.uuid('user_id').references('users.id');
       table.dateTime('exp');
       table.timestamps();
     })

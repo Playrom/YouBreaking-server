@@ -6,6 +6,7 @@ var FacebookStrategy = require('passport-facebook').Strategy;
 var FacebookTokenStrategy = require('passport-facebook-token');
 var JwtStrategy = require('passport-jwt').Strategy,
     ExtractJwt = require('passport-jwt').ExtractJwt;
+var extractor = ExtractJwt.fromAuthHeader();
 
 var cfg = require("./config.js"); 
 
@@ -108,6 +109,9 @@ passport.use(new FacebookTokenStrategy({
     // Creo una richiesta http per generare un token a lunga scadenza per facebook da immagazzinare
     // Viene rigenerato ad ogni login
 
+
+
+
     var baseurl = "https://graph.facebook.com/v2.8/oauth/access_token?grant_type=fb_exchange_token&";
     baseurl = baseurl + "client_id=" + process.env.FACEBOOK_ID + "&";
     baseurl = baseurl + "client_secret=" + process.env.FACEBOOK_SECRET + "&";
@@ -129,6 +133,15 @@ passport.use(new FacebookTokenStrategy({
             console.log(user);
 
             if (user) { // Se l'utente esiste già allora non devo creare nulla, solo generare il Token JWT
+
+              var oldToken = extractor(req);
+              new Token({user_id:user.id, token : oldToken}).fetch().then(function(tc){
+                tc.destroy().then(function(distrutto){
+
+                })
+              });
+
+
 
               var access_token = json.access_token;
               user.set('facebook_token', access_token);
@@ -222,7 +235,6 @@ passport.use(new FacebookTokenStrategy({
 
  
 var opts = {}
-var extractor = ExtractJwt.fromAuthHeader();
 opts.jwtFromRequest = extractor;
 opts.secretOrKey = cfg.jwtSecret;
 opts.passReqToCallback = true

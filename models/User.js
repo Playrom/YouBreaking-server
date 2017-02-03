@@ -3,6 +3,8 @@ var bcrypt = require('bcrypt-nodejs');
 var bookshelf = require('../config/bookshelf');
 
 var Token = require('./Token');
+var News = require('./News');
+var Voto = require('./Voto');
 
 var User = bookshelf.Model.extend({
   tableName: 'users',
@@ -46,6 +48,14 @@ var User = bookshelf.Model.extend({
 
   tokens: function(){
     return this.hasMany(Token);
+  },
+
+  news: function(){
+    return this.hasMany(News);
+  },
+
+  voti : function(){
+    return this.hasMany(Voto);
   }
 });
 

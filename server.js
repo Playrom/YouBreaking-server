@@ -19,6 +19,7 @@ var HomeController = require('./controllers/home');
 var userController = require('./controllers/user');
 var contactController = require('./controllers/contact');
 var profileController = require('./controllers/profile');
+var newsController = require('./controllers/news');
 
 // Passport OAuth strategies
 require('./config/passport');
@@ -109,6 +110,12 @@ app.get(
 app.post('/api/auth/logout', profileController.authenticate, profileController.logout);
 app.get('/api/profile', passport.authenticate('jwt', { session: false}), profileController.getProfile);
 app.put('/api/profile/:id', profileController.authOrAdmin, profileController.editProfile);
+
+app.get('/api/news/:id', newsController.passUser, newsController.getSingleNews);
+app.get('/api/news', newsController.passUser, newsController.getNews);
+app.post('/api/news', newsController.authenticate, newsController.postNews);
+app.post('/api/vote', newsController.authenticate, newsController.postVote);
+app.get('/api/vote', newsController.authenticate, newsController.getWaitVotesUser);
 
 
 /*app.get('/auth/profile', passport.authenticate('jwt', { session: false }),
