@@ -156,7 +156,7 @@ if (process.env.MODE === 'production') {
       cert: fs.readFileSync(sslPath + 'fullchain.pem')
   };
 
-  var httpsServer = https.createServer(credentials, app);
+  var httpsServer = https.createServer(options, app);
   httpsServer.listen(443,function(){
     console.log('Server listening on port ' + 433);
   });
