@@ -4,17 +4,17 @@ var bookshelf = require('../config/bookshelf');
 
 var News = require('./News');
 
-var Aggiunte = bookshelf.Model.extend({
-  tableName: 'aggiuntivi',
+var Evento = bookshelf.Model.extend({
+  tableName: 'events',
   uuid: true,
   hasTimestamps: true,
 
   notizie : function(){
-    return this.belongsToMany(News);
+    return this.hasMany('News');
   },
 
-      hidden: ['created_at', 'updated_at', 'notizia_id'],
+      hidden: ['created_at', 'updated_at'],
 
 });
 
-module.exports = Aggiunte;
+module.exports = bookshelf.model('Evento',Evento);

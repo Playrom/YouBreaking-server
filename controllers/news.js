@@ -43,7 +43,7 @@ exports.getNews = function(req, res) {
     News
     .forge()
     .orderBy('created_at', 'DESC')
-    .fetchAll({withRelated:['aggiuntivi']})
+    .fetchAll({withRelated:['aggiuntivi','evento']})
     .then(function(notizie){
         if(notizie){
             var jsonNotizie = notizie.toJSON();
@@ -128,7 +128,8 @@ exports.postNews = function(req, res) {
         News.forge({
             user_id : idUtente ,
             title : body.title || "",
-            text : body.text || ""
+            text : body.text || "",
+            event_id : body.eventId || null
         })
         .save()
         .then(function(news){

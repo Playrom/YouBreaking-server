@@ -5,6 +5,7 @@ var bookshelf = require('bookshelf')(knex);
 bookshelf.plugin('virtuals');
 bookshelf.plugin('visibility');
 bookshelf.plugin(require('bookshelf-uuid'))
+bookshelf.plugin('registry')
 
 knex.migrate.latest();
 

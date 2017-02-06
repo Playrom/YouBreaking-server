@@ -10,8 +10,8 @@ var Voto = bookshelf.Model.extend({
   uuid: true,
   hasTimestamps: true,
 
-  notizie : function(){
-    return this.hasOne(News);
+  notizia : function(){
+    return this.belongsTo(News);
   },
   utente : function(){
     return this.hasOne(User);
