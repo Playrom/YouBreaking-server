@@ -130,16 +130,38 @@ app.post('/api/events', eventsController.authenticate, eventsController.postEven
     }
 );*/
 
+var http = require('http');
+
+
+if (process.env.MODE == 'development'){
+  var httpServer = http.createServer(app);
+  httpServer.listen(80,function(){
+    console.log('Server listening on port ' + 80);
+  });
+}
+
 // Production error handler
-if (app.get('env') === 'production') {
+if (process.env.MODE === 'production') {
   app.use(function(err, req, res, next) {
     console.error(err.stack);
     res.sendStatus(err.status || 500);
   });
+
+  var fs = require('fs');
+  var https = require('https');
+  var sslPath = '/etc/letsencrypt/live/youbreaking.giorgioromano.it/';
+
+  var options = {  
+      key: fs.readFileSync(sslPath + 'privkey.pem'),
+      cert: fs.readFileSync(sslPath + 'fullchain.pem')
+  };
+
+  var httpsServer = https.createServer(credentials, app);
+  httpsServer.listen(443,function(){
+    console.log('Server listening on port ' + 433);
+  });
 }
 
-app.listen(app.get('port'), function() {
-  console.log('Express server listening on port ' + app.get('port'));
-});
+
 
 module.exports = app;
