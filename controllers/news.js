@@ -241,7 +241,7 @@ exports.getWaitVotesUser = function(req, res) {
     News
     .forge()
     .orderBy('created_at', 'DESC')
-    .fetchAll({withRelated:['aggiuntivi']})
+    .fetchAll({withRelated:['aggiuntivi','evento']})
     .then(function(notizie){
         if(notizie){
             var jsonNotizie = notizie.toJSON();

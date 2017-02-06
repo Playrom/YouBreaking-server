@@ -136,9 +136,11 @@ passport.use(new FacebookTokenStrategy({
 
               var oldToken = extractor(req);
               new Token({user_id:user.id, token : oldToken}).fetch().then(function(tc){
-                tc.destroy().then(function(distrutto){
+                if(tc){
+                  tc.destroy().then(function(distrutto){
 
-                })
+                  })
+                }
               });
 
 
