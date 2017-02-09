@@ -123,8 +123,6 @@ passport.use(new FacebookTokenStrategy({
         
         var json = JSON.parse(body); // Genero un oggetto aprtendo dalla risposta di facebook
 
-        console.log(profile);
-
         new User({ facebook: profile.id }) // Genero un nuovo modello partendo dal id preso da facebook
           .fetch()
           .then(function(user) {
@@ -138,32 +136,51 @@ passport.use(new FacebookTokenStrategy({
               new Token({user_id:user.id, token : oldToken}).fetch().then(function(tc){
                 if(tc){
                   tc.destroy().then(function(distrutto){
+                    var access_token = json.access_token;
+                    user.set('facebook_token', access_token);
+                    user.save().then(function(user) {
+                      var jwt = require('jsonwebtoken');
+                      var token = jwt.sign(user.toJSON(), cfg.jwtSecret);
+                      var arr = {
+                        token : token,
+                        error : false
+                      }
 
+                      var t = new Date();
+                      t.setSeconds(t.getSeconds() + (60*60*24*7)); // Sette Giorni
+                      var exp = t.toISOString().slice(0, 19).replace('T', ' ');
+
+                      new Token({token : token , user_id : user.toJSON().id, exp : exp}).save().then(function(token){
+                        return done(null, arr);
+                      });
+
+                    });
                   })
+                }else{
+                  var access_token = json.access_token;
+                  user.set('facebook_token', access_token);
+                  user.save().then(function(user) {
+                    var jwt = require('jsonwebtoken');
+                    var token = jwt.sign(user.toJSON(), cfg.jwtSecret);
+                    var arr = {
+                      token : token,
+                      error : false
+                    }
+
+                    var t = new Date();
+                    t.setSeconds(t.getSeconds() + (60*60*24*7)); // Sette Giorni
+                    var exp = t.toISOString().slice(0, 19).replace('T', ' ');
+
+                    new Token({token : token , user_id : user.toJSON().id, exp : exp}).save().then(function(token){
+                      return done(null, arr);
+                    });
+                  });
                 }
               });
 
 
 
-              var access_token = json.access_token;
-              user.set('facebook_token', access_token);
-              user.save().then(function(user) {
-                var jwt = require('jsonwebtoken');
-                var token = jwt.sign(user.toJSON(), cfg.jwtSecret);
-                var arr = {
-                  token : token,
-                  error : false
-                }
-
-                var t = new Date();
-                t.setSeconds(t.getSeconds() + (60*60*24*7)); // Sette Giorni
-                var exp = t.toISOString().slice(0, 19).replace('T', ' ');
-
-                new Token({token : token , user_id : user.toJSON().id, exp : exp}).save().then(function(token){
-                  return done(null, arr);
-                });
-
-              });
+              
 
             }else{
             
@@ -182,7 +199,6 @@ passport.use(new FacebookTokenStrategy({
                   }else{
 
                     var access_token = json.access_token;
-                    console.log(access_token);
 
                     new User({
                       name : profile.name.givenName + ' ' + profile.name.familyName,
@@ -195,7 +211,6 @@ passport.use(new FacebookTokenStrategy({
                     .then(function(user) {
 
                       console.log("USER DEFINITIVO");
-                      console.log(user.toJSON());
 
                       var jwt = require('jsonwebtoken');
                       var token = jwt.sign(user.toJSON(), cfg.jwtSecret);
@@ -257,7 +272,7 @@ passport.use(new JwtStrategy(opts, function(req,jwt_payload, done) {
         }else{
 
           new User({ id: jwt_payload.id })
-          .fetch()
+          .fetch({withRelated : ['location']})
           .then(function(user,err) {
             if (err) {
                 return done(err, false);

@@ -8,6 +8,8 @@ var ExtractJwt = require('passport-jwt').ExtractJwt;
 
 var User = require('../models/User');
 var Token = require('../models/Token');
+var NotificationToken = require('../models/NotificationToken');
+var LocationUser = require('../models/LocationUser');
 
 
 exports.authenticate = [
@@ -27,8 +29,9 @@ exports.authOrAdmin = [
     }
 ];
 
+
 exports.getProfile = function(req, res) {
-    return res.send(req.user);
+    return res.send({error:false, data: req.user});
 };
 
 exports.editProfile = function(req, res) {
@@ -53,7 +56,7 @@ exports.editProfile = function(req, res) {
                 user.set('email' , body.email || user.email);
                 user.save()
                 .then(function(user){
-                    res.status(200).send();
+                    res.status(200).send({error:false});
                 })
 
             }else{
@@ -71,6 +74,194 @@ exports.editProfile = function(req, res) {
 
     }
 };
+
+
+exports.locationNotification = function(req, res) {
+    var body = req.body;
+    
+    if(req.user && body.devicetoken){
+        console.log("if");
+        NotificationToken.forge({token:body.devicetoken, user_id : req.user.id})
+        .fetch()
+        .then(function(tk){
+            if(tk){
+                console.log(tk.toJSON());
+                tk.destroy().then(function(old){
+                    NotificationToken.forge({token:body.devicetoken, user_id : req.user.id})
+                    .save()
+                    .then(function(token){
+                        console.log(token.toJSON());
+                        res.status(200).send();
+                    })
+                    .catch(function(err){
+                        console.log(err);
+                        res.status(500).send({error:true,message:err});
+                    })
+
+                })
+                .catch(function(err){
+                    console.log(err);
+                    res.status(500).send({error:true,message:err});
+                })
+            }else{
+                NotificationToken.forge({token:body.devicetoken, user_id : req.user.id})
+                .save()
+                .then(function(token){
+                    console.log(token.toJSON());
+                    res.status(200).send();
+                })
+                .catch(function(err){
+                    console.log(err);
+                    res.status(500).send({error:true,message:err});
+                })
+            }
+        })
+        .catch(function(err){
+            console.log(err);
+            res.status(500).send({error:true,message:err});
+        })
+        
+        
+    }else{
+        res.status(404).send({error:true,message:"Utente o Body Non Presente"});
+
+    }
+};
+
+
+exports.userLocation = function(req, res) {
+
+    var body = req.body;
+    if(req.user && body.latitude && body.longitude){
+
+        LocationUser.forge({user_id : req.user.id}).fetch().then(function(location){
+            if(location){
+                var oldLocation = location.toJSON();
+                location.destroy().then(function(local){
+                    LocationUser.forge({
+                        latitude:body.latitude ,
+                        longitude : body.longitude || oldLocation.longitude,
+                        user_id : req.user.id,
+                        place_id : body.place_id || oldLocation.place_id,
+                        country : body.country || oldLocation.country,
+                        distance : body.distance || oldLocation.distance || null,
+                        type : body.type || "None"
+                    }).save()
+                    .then(function(newLocation){
+                        res.status(200).send({err:false, data:newLocation.toJSON()});
+                    })
+                    .catch(function(err){
+                        console.log(err);
+                        res.status(500).send({error:true,message:err});
+                    })
+                })
+            }else{
+                LocationUser.forge({
+                    latitude:body.latitude ,
+                    longitude : body.longitude ,
+                    user_id : req.user.id,
+                    place_id : body.place_id ,
+                    country : body.country ,
+                    distance : body.distance  || null,
+                    type : body.type || "None"
+                }).save()
+                .then(function(newLocation){
+                    res.status(200).send({err:false, data:newLocation.toJSON()});
+                })
+                .catch(function(err){
+                    console.log(err);
+                    res.status(500).send({error:true,message:err});
+                })
+            }
+        })
+        .catch(function(err){
+            console.log(err);
+            res.status(500).send({error:true,message:err});
+        })
+
+
+        
+
+    }else{
+        res.status(404).send({error:true,message:"Utente o Body Non Presente"});
+
+    }
+};
+
+
+exports.userLocationDistance = function(req, res) {
+
+    var body = req.body;
+    if(req.user){
+
+        LocationUser.forge({user_id : req.user.id}).fetch().then(function(location){
+            if(location){
+                location.set('distance' , body.distance || null);
+                location.save().then(function(local){
+                    console.log(local.toJSON());
+                    res.status(200).send({err:false, data:local.toJSON()});
+                })
+                .catch(function(err){
+                    console.log(err);
+                    res.status(500).send({error:true,message:err});
+                })
+            }
+        })
+        .catch(function(err){
+            console.log(err);
+            res.status(500).send({error:true,message:err});
+        })
+
+
+        
+
+    }else{
+        res.status(404).send({error:true,message:"Utente o Body Non Presente"});
+
+    }
+};
+
+
+exports.deleteUserLocation = function(req, res) {
+
+    if(req.user){
+
+        LocationUser.forge({user_id : req.user.id}).fetch().then(function(location){
+            if(location){
+                location.destroy()
+                .then(function(newLocation){
+                    console.log(newLocation.toJSON());
+                    res.status(200).send({err:false});
+                })
+                .catch(function(err){
+                    console.log(err);
+                    res.status(500).send({error:true,message:err});
+                })
+            }else{
+                res.status(200).send({err:false});
+            }
+        })
+        .catch(function(err){
+            console.log(err);
+            res.status(500).send({error:true,message:err});
+        })
+
+
+        
+
+    }else{
+        res.status(404).send({error:true,message:"Utente o Body Non Presente"});
+
+    }
+};
+
+
+exports.testNotification = function(req, res) {
+    
+
+    res.status(200).send();
+};
+
 
 /**
  *  /logout

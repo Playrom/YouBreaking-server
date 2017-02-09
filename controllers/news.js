@@ -4,13 +4,15 @@ var nodemailer = require('nodemailer');
 var passport = require('passport');
 var Promise = require("bluebird");
 var ExtractJwt = require('passport-jwt').ExtractJwt;
+const haversine = require('haversine')
 
 var User = require('../models/User');
 var Token = require('../models/Token');
 var News = require('../models/News');
 var Voto = require('../models/Voto');
 var Aggiunte = require('../models/Aggiunte');
-
+var LocationUser = require('../models/LocationUser');
+var NotificationToken = require('../models/NotificationToken');
 
 exports.authenticate = [
     passport.authenticate('jwt', { session: false})
@@ -20,7 +22,6 @@ exports.authenticate = [
 exports.authOrAdmin = [
     passport.authenticate('jwt', { session: false}),
     function(req, res, next){
-        console.log(req.user.toJSON().level);
         if(req.user.toJSON().level > 999 || req.user.id == req.params.id){ // Livello 1000 = Admin
             next();
         }else{
@@ -160,7 +161,121 @@ exports.postNews = function(req, res) {
                 Promise.all(promises)
                 .then(function(result){
                     notizia["aggiunte"] = aggiunteJson
-                    res.send({error:false, data:notizia})
+
+                    var temp = {};
+                    aggiunteJson.map(function(item){
+                        temp[item.tipo] = item.valore;
+                    });
+
+                    console.log(temp);
+
+                    if(temp["LOCATION_LATITUDE"] && temp["LOCATION_LONGITUDE"]){
+                        var latitude = temp["LOCATION_LATITUDE"];
+                        var longitude = temp["LOCATION_LONGITUDE"];
+
+                        var start = {
+                            latitude : latitude,
+                            longitude : longitude
+                        };
+
+                        var usersToPush = [];
+
+                        console.log(start);
+
+                        LocationUser.forge().fetchAll()
+                        .then(function(locations){
+                            if(locations){
+                                var jsonLocations = locations.toJSON();
+
+                                console.log(jsonLocations);
+
+                                for(var i = 0 ; i < jsonLocations.length ; i++){
+                                    var end = {
+                                        latitude : jsonLocations[i]["latitude"],
+                                        longitude : jsonLocations[i]["longitude"]
+                                    };
+
+                                    if(jsonLocations[i].distance){
+                                        if(haversine(start, end, { threshold : jsonLocations[i].distance, unit: 'km'}) ) { // Check if In Range
+                                            usersToPush.push(jsonLocations[i].user_id);
+                                        }
+                                    }else{
+                                        if(jsonLocations[i].country == temp["LOCATION_COUNTRY"]){
+                                            usersToPush.push(jsonLocations[i].user_id);
+                                        }
+                                    }
+                                }
+
+                                console.log(usersToPush);
+
+                                var apn = require('apn');
+                                var options = {
+                                    token: {
+                                        key: "/Users/playrom/Projects/Tesi/apnkey.p8",
+                                        keyId: "5VQ8VVZJC8",
+                                        teamId: "33VGWYZGV4"
+                                    },
+                                    production: false
+                                };
+
+                                var apnProvider = new apn.Provider(options);
+
+                                NotificationToken
+                                .where('user_id', 'IN', usersToPush)
+                                .fetchAll()
+                                .then(function(usersPushing){
+                                    if(usersPushing){
+
+                                        var tokens = usersPushing.toJSON().map(function(item){
+                                            return item["token"];
+                                        })
+
+                                        // Prepare a new notification
+                                        var notification = new apn.Notification();
+
+                                        // Specify your iOS app's Bundle ID (accessible within the project editor)
+                                        notification.topic = 'com.giorgioromano.news.youbreaking';
+
+                                        // Set expiration to 1 hour from now (in case device is offline)
+                                        notification.expiry = Math.floor(Date.now() / 1000) + 3600;
+
+                                        // Set app badge indicator
+                                        //notification.badge = 0;
+
+                                        // Play ping.aiff sound when the notification is received
+                                        notification.sound = 'ping.aiff';
+
+                                        // Display the following message (the actual notification text, supports emoji)
+                                        notification.title = notizia["title"];
+                                        notification.body = notizia["text"];
+
+                                        // Send any extra payload data with the notification which will be accessible to your app in didReceiveRemoteNotification
+                                        notification.payload = notizia;
+
+                                        // Actually send the notification
+                                        apnProvider.send(notification, tokens).then(function(result) {  
+                                            // Check the result for any failed devices
+                                            console.log(result);
+                                        });
+
+                                    }
+
+                                    res.send({error:false, data:notizia})
+                                    
+                                })
+
+
+                            }else{
+                                res.send({error:false, data:notizia})
+                            }
+                        })
+
+
+                    }else{
+                        res.send({error:false, data:notizia})
+                    }
+
+                    
                 })
 
             }else{

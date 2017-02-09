@@ -2,9 +2,11 @@ var crypto = require('crypto');
 var bcrypt = require('bcrypt-nodejs');
 var bookshelf = require('../config/bookshelf');
 
+var NotificationToken = require('./NotificationToken');
 var Token = require('./Token');
 var News = require('./News');
 var Voto = require('./Voto');
+var LocationUser = require('./LocationUser');
 
 var User = bookshelf.Model.extend({
   tableName: 'users',
@@ -50,12 +52,20 @@ var User = bookshelf.Model.extend({
     return this.hasMany(Token);
   },
 
+  notificationTokens: function(){
+    return this.hasMany(NotificationToken);
+  },
+
   news: function(){
     return this.hasMany(News);
   },
 
   voti : function(){
     return this.hasMany(Voto);
+  },
+
+  location : function(){
+    return this.hasOne(LocationUser);
   }
 });
 

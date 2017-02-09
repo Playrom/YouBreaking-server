@@ -111,6 +111,11 @@ app.get(
 app.post('/api/auth/logout', profileController.authenticate, profileController.logout);
 app.get('/api/profile', passport.authenticate('jwt', { session: false}), profileController.getProfile);
 app.put('/api/profile/:id', profileController.authOrAdmin, profileController.editProfile);
+app.post('/api/profile/location', profileController.authenticate, profileController.userLocation);
+app.delete('/api/profile/location', profileController.authenticate, profileController.deleteUserLocation);
+app.put('/api/profile/location/distance', profileController.authenticate, profileController.userLocationDistance);
+app.post('/api/register/ios', profileController.authenticate, profileController.locationNotification);
+app.get('/api/testnotification',  profileController.testNotification);
 
 app.get('/api/news/:id', newsController.passUser, newsController.getSingleNews);
 app.get('/api/news', newsController.passUser, newsController.getNews);
