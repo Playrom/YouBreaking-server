@@ -14,11 +14,11 @@ var Voto = bookshelf.Model.extend({
     return this.belongsTo(News);
   },
   utente : function(){
-    return this.hasOne(User);
+    return this.belongsTo('User');
   },
 
     hidden: ['created_at', 'updated_at', 'notizia_id'],
 
 });
 
-module.exports = Voto;
+module.exports = bookshelf.model('Voto',Voto);

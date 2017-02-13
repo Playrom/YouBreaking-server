@@ -127,6 +127,7 @@ app.get('/api/events/:id', eventsController.passUser, eventsController.getSingle
 app.get('/api/events', eventsController.passUser, eventsController.getEvents);
 app.post('/api/events', eventsController.authenticate, eventsController.postEvent);
 
+app.get('/api/users/:id', profileController.getUser);
 
 
 /*app.get('/auth/profile', passport.authenticate('jwt', { session: false }),

@@ -21,7 +21,7 @@ exports.authOrAdmin = [
     passport.authenticate('jwt', { session: false}),
     function(req, res, next){
         console.log(req.user.toJSON().level);
-        if(req.user.toJSON().level > 999 || req.user.id == req.params.id){ // Livello 1000 = Admin
+        if(req.user.toJSON().level == "ADMIN"  || req.user.id == req.params.id){ // Livello 1000 = Admin
             next();
         }else{
             res.status(401).send({error:true,message:"Livello Troppo Basso"})

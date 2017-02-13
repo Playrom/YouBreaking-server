@@ -21,7 +21,7 @@ exports.authOrAdmin = [
     passport.authenticate('jwt', { session: false}),
     function(req, res, next){
         console.log(req.user.toJSON().level);
-        if(req.user.toJSON().level > 999 || req.user.id == req.params.id){ // Livello 1000 = Admin
+        if(req.user.toJSON().level == "ADMIN" || req.user.id == req.params.id){ // Livello 1000 = Admin
             next();
         }else{
             res.status(401).send({error:true,message:"Livello Troppo Basso"})
@@ -32,6 +32,32 @@ exports.authOrAdmin = [
 
 exports.getProfile = function(req, res) {
     return res.send({error:false, data: req.user});
+};
+
+exports.getUser = function(req, res) {
+    if(req.params.id){
+
+        var related = [];
+        if(req.query.field){
+            related = req.query.field.split(",");
+            if(related.includes('notizie')){
+                related.push('notizie.aggiuntivi');
+                related.push('notizie.evento');
+                related.push('notizie.voti');
+            }
+        }
+
+        var userId = req.params.id;
+        User.forge({id:userId})
+        .fetch({withRelated:related})
+        .then(function(user){
+            if(user){
+                return res.status(200).send({error:false,data:user.toJSON()});
+            }else{
+                return res.status(404).send({error:true, message :"Utente Non Trovato"});
+            }
+        })
+    }
 };
 
 exports.editProfile = function(req, res) {
