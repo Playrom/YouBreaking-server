@@ -6,13 +6,20 @@ var NotificationToken = require('../../models/NotificationToken');
 var utils = require('./utils');
 
 var apn = require('apn');
+var production = false;
+if(process.env.PRODUCTION == "false"){
+    production = false;
+}else if(process.env.PRODUCTION == "true"){
+    production = true;
+}
+
 var options = {
     token: {
         key: process.env.APNKEY,
         keyId: "5VQ8VVZJC8",
         teamId: "33VGWYZGV4"
     },
-    production: process.env.PRODUCTION
+    production: production
 };
 
 var apnProvider = new apn.Provider(options);
