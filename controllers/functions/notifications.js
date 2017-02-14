@@ -8,11 +8,11 @@ var utils = require('./utils');
 var apn = require('apn');
 var options = {
     token: {
-        key: "/Users/playrom/Projects/Tesi/apnkey.p8",
+        key: process.env.APNKEY,
         keyId: "5VQ8VVZJC8",
         teamId: "33VGWYZGV4"
     },
-    production: false
+    production: process.env.PRODUCTION
 };
 
 var apnProvider = new apn.Provider(options);

@@ -140,7 +140,7 @@ app.get('/api/users/:id', profileController.getUser);
 var http = require('http');
 
 
-if (process.env.MODE == 'development'){
+if (process.env.PRODUCTION == "false"){
   var httpServer = http.createServer(app);
   httpServer.listen(80,function(){
     console.log('Server listening on port ' + 80);
@@ -148,7 +148,7 @@ if (process.env.MODE == 'development'){
 }
 
 // Production error handler
-if (process.env.MODE === 'production') {
+if (process.env.PRODUCTION == "true") {
   app.use(function(err, req, res, next) {
     console.error(err.stack);
     res.sendStatus(err.status || 500);
@@ -156,7 +156,7 @@ if (process.env.MODE === 'production') {
 
   var fs = require('fs');
   var https = require('https');
-  var sslPath = '/etc/letsencrypt/live/youbreaking.giorgioromano.it/';
+  var sslPath = process.env.SSLPATH;
 
   var options = {  
       key: fs.readFileSync(sslPath + 'privkey.pem'),
