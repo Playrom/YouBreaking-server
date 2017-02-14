@@ -2,32 +2,12 @@ var async = require('async');
 var crypto = require('crypto');
 var nodemailer = require('nodemailer');
 var passport = require('passport');
-
 var ExtractJwt = require('passport-jwt').ExtractJwt;
-
 
 var User = require('../models/User');
 var Token = require('../models/Token');
 var NotificationToken = require('../models/NotificationToken');
 var LocationUser = require('../models/LocationUser');
-
-
-exports.authenticate = [
-    passport.authenticate('jwt', { session: false})
-];
-
-// Middleware per verificare se i dati vengono modificati dall'utente stesso o da un amministratore
-exports.authOrAdmin = [
-    passport.authenticate('jwt', { session: false}),
-    function(req, res, next){
-        console.log(req.user.toJSON().level);
-        if(req.user.toJSON().level == "ADMIN" || req.user.id == req.params.id){ // Livello 1000 = Admin
-            next();
-        }else{
-            res.status(401).send({error:true,message:"Livello Troppo Basso"})
-        }
-    }
-];
 
 
 exports.getProfile = function(req, res) {
@@ -279,13 +259,6 @@ exports.deleteUserLocation = function(req, res) {
         res.status(404).send({error:true,message:"Utente o Body Non Presente"});
 
     }
-};
-
-
-exports.testNotification = function(req, res) {
-    
-
-    res.status(200).send();
 };
 
 
