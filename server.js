@@ -21,6 +21,8 @@ var contactController = require('./controllers/contact');
 var profileController = require('./controllers/profile');
 var newsController = require('./controllers/news');
 var eventsController = require('./controllers/events');
+var auth = require('./controllers/authenticate');
+var voteController = require('./controllers/vote');
 
 // Passport OAuth strategies
 require('./config/passport');
@@ -108,24 +110,23 @@ app.get(
         })(req, res);
   }
 );
-app.post('/api/auth/logout', profileController.authenticate, profileController.logout);
+app.post('/api/auth/logout', auth.authenticate, profileController.logout);
 app.get('/api/profile', passport.authenticate('jwt', { session: false}), profileController.getProfile);
-app.put('/api/profile/:id', profileController.authOrAdmin, profileController.editProfile);
-app.post('/api/profile/location', profileController.authenticate, profileController.userLocation);
-app.delete('/api/profile/location', profileController.authenticate, profileController.deleteUserLocation);
-app.put('/api/profile/location/distance', profileController.authenticate, profileController.userLocationDistance);
-app.post('/api/register/ios', profileController.authenticate, profileController.locationNotification);
-app.get('/api/testnotification',  profileController.testNotification);
+app.put('/api/profile/:id', auth.authOrAdmin, profileController.editProfile);
+app.post('/api/profile/location', auth.authenticate, profileController.userLocation);
+app.delete('/api/profile/location', auth.authenticate, profileController.deleteUserLocation);
+app.put('/api/profile/location/distance', auth.authenticate, profileController.userLocationDistance);
+app.post('/api/register/ios', auth.authenticate, profileController.locationNotification);
 
-app.get('/api/news/:id', newsController.passUser, newsController.getSingleNews);
-app.get('/api/news', newsController.passUser, newsController.getNews);
-app.post('/api/news', newsController.authenticate, newsController.postNews);
-app.post('/api/vote', newsController.authenticate, newsController.postVote);
-app.get('/api/vote', newsController.authenticate, newsController.getWaitVotesUser);
+app.get('/api/news/:id', auth.passUser, newsController.getSingleNews);
+app.get('/api/news', auth.passUser, newsController.getNews);
+app.post('/api/news', auth.authenticate, newsController.postNews);
+app.post('/api/vote', auth.authenticate, voteController.postVote);
+app.get('/api/vote', auth.authenticate, voteController.getWaitVotesUser);
 
-app.get('/api/events/:id', eventsController.passUser, eventsController.getSingleEvent);
-app.get('/api/events', eventsController.passUser, eventsController.getEvents);
-app.post('/api/events', eventsController.authenticate, eventsController.postEvent);
+app.get('/api/events/:id', auth.passUser, eventsController.getSingleEvent);
+app.get('/api/events', auth.passUser, eventsController.getEvents);
+app.post('/api/events', auth.authenticate, eventsController.postEvent);
 
 app.get('/api/users/:id', profileController.getUser);
 
