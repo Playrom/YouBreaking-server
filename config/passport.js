@@ -256,45 +256,52 @@ opts.jwtFromRequest = extractor;
 opts.secretOrKey = cfg.jwtSecret;
 opts.passReqToCallback = true
 passport.use(new JwtStrategy(opts, function(req,jwt_payload, done) {
-    var token = extractor(req);
-    new Token({user_id:jwt_payload.id, token : token}).fetch().then(function(token){
+    if(jwt_payload){
+      var tk = extractor(req);
+      new Token({user_id:jwt_payload.id, token : tk}).fetch().then(function(token){
 
-      if(token){
+        if(token){
 
-        var dt = token.toJSON().exp;
-        var tokenDate = dt.getTime() / 1000;
+          var dt = token.toJSON().exp;
+          var tokenDate = dt.getTime() / 1000;
 
-        var now = Date.now();
-        var now = now / 1000;
+          var now = Date.now();
+          var now = now / 1000;
 
-        if(tokenDate <= now){
-          done(null,false,{error:true , message: "ExpiredToken"});
+          if(tokenDate <= now){
+            done(null,false,{error:true , message: "ExpiredToken"});
+          }else{
+
+            new User({ id: jwt_payload.id })
+            .fetch({withRelated : ['location']})
+            .then(function(user,err) {
+              if (err) {
+                  return done(err, false);
+              }
+              if (user) {
+                  done(null, user);
+              } else {
+                  done(null, false);
+                  // or you could create a new account
+              }
+            })
+          
+          }
+
         }else{
-
-          new User({ id: jwt_payload.id })
-          .fetch({withRelated : ['location']})
-          .then(function(user,err) {
-            if (err) {
-                return done(err, false);
-            }
-            if (user) {
-                done(null, user);
-            } else {
-                done(null, false);
-                // or you could create a new account
-            }
-          })
-        
+          console.log("Errore Token is not Defined ");
+          done(null,false);
         }
-
-      }else{
-        console.log("Errore EXP");
-        done(null,false);
-      }
+      
   }).catch(function(err){
     console.log(err);
     done(null,false);
   })
+
+  }else{
+    console.log("No JWT PAYLOAD");
+    done(null,false);
+  }
 
     
 }));

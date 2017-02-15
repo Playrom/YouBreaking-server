@@ -30,7 +30,7 @@ var sendNotificationChangeLevel = function(id,level,demoted){
 
     NotificationToken
     .where('user_id', id)
-    .fetch()
+    .fetch({withRelated:"user"})
     .then(function(user){
         if(user){
 
@@ -55,9 +55,11 @@ var sendNotificationChangeLevel = function(id,level,demoted){
                 notification.title = "Il Tuo Livello è diminuito";
                 notification.body = "Hai ricevuto troppi voti negativi, il tuo livello su You Breaking ora è " + level;
             }else{
-                notification.title = "Grande " + user.username + "! Ora sei un " + level;
+                notification.title = "Grande " + user.toJSON()["user"]["name"] + "! Ora sei un " + level;
                 notification.body = "Complimenti, i tuoi sforzi sono stati apprezzati e quindi sei salito di livello su You Breaking!";
             }
+
+            notification.payload = {type:"USER_LEVEL_CHANGED"};
 
             // Actually send the notification
             apnProvider.send(notification, tokens).then(function(result) {  
@@ -101,7 +103,7 @@ exports.pushToUsers = function(usersToPush,notizia){
             notification.body = notizia["text"];
 
             // Send any extra payload data with the notification which will be accessible to your app in didReceiveRemoteNotification
-            notification.payload = notizia;
+            notification.payload = {type:"NEWS_NOTIFICATION" , data:notizia};
 
             // Actually send the notification
             apnProvider.send(notification, tokens).then(function(result) {  
@@ -136,7 +138,7 @@ exports.changeLevel = function(id,oldLevel,newScore){
                 .catch(function(err){
                     console.log(err);
                 });
-            }else if(newScore < 25){ // DEMOTION AD USER
+            }else if(newScore < 2){ // DEMOTION AD USER
                 User.forge({id:id}).save('level','USER')
                 .then(function(user){
                     sendNotificationChangeLevel(id,"Utente",true);
@@ -209,10 +211,11 @@ exports.promoteNews = function(idNews){
                                 notizia.save()
                                 .then(function(salvata){
 
-                                    console.log(salvata.toJSON());
+                                    var json = salvata.toJSON();
+                                    json["score"] = valoreNews;
 
                                     NotificationToken
-                                    .where('user_id', salvata.toJSON().user_id)
+                                    .where('user_id', json.user_id)
                                     .fetch()
                                     .then(function(user){
 
@@ -237,8 +240,10 @@ exports.promoteNews = function(idNews){
 
                                             // Display the following message (the actual notification text, supports emoji)
                                             notification.title = "La tua notizia è stata pubblicata!";
-                                            notification.body = "La tua notizia con il titolo \"" + salvata.toJSON().title + "\" è stata pubblicata";
+                                            notification.body = "La tua notizia con il titolo \"" + json.title + "\" è stata pubblicata";
 
+                                            notification.payload = {type:"NEWS_POSTED" , data : json};
+                                            
                                             // Actually send the notification
                                             apnProvider.send(notification, tokens).then(function(result) {  
                                                 // Check the result for any failed devices

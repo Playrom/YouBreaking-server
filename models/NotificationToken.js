@@ -9,8 +9,8 @@ var NotificationToken = bookshelf.Model.extend({
   uuid: true,
   hasTimestamps: true,
   user: function() {
-    return this.belongsTo(User);
+    return this.belongsTo('User');
   }
 });
 
-module.exports = NotificationToken;
+module.exports = bookshelf.model('NotificationToken',NotificationToken);

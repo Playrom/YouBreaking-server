@@ -98,7 +98,7 @@ var User = bookshelf.Model.extend({
   },
 
   notificationTokens: function(){
-    return this.hasMany(NotificationToken);
+    return this.hasMany('NotificationToken');
   },
 
   notizie: function(){

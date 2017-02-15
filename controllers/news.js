@@ -16,17 +16,33 @@ exports.getNews = function(req, res) {
 
     var live = 1;
 
+    var Data = News.forge();
+
     if(req.query.live){
         if(req.query.live == "false"){
-            live = 0;
-        }else{
-            live =1;
+            Data = Data.where('live',0)
+        }else if(req.query.live == "true"){
+            Data = Data.where('live',1)
         }
     }
 
-    News
-    .forge()
-    .where('live',live)
+    var page = 1;
+    var pageSize = 5;
+    var total = 0;
+    var pages = 0;
+
+    if(req.query.page){
+        page = parseInt(req.query.page);
+    }
+
+    if(req.query.pageSize){
+        pageSize = parseInt(req.query.pageSize);
+    }
+
+    var startLimit = (pageSize * ( page - 1) );
+    var endLimit = (pageSize * page ) ;
+
+    Data
     .orderBy('created_at', 'DESC')
     .fetchAll({withRelated:['aggiuntivi','evento','voti']})
     .then(function(notizie){
@@ -82,6 +98,10 @@ exports.getNews = function(req, res) {
                 });
             }
 
+            total = jsonNotizie.length;
+            pages = Math.ceil( ( total / pageSize ));
+
+            jsonNotizie = jsonNotizie.slice(startLimit,endLimit);
             
 
             jsonNotizie.map(function(val,index,arr){
@@ -116,14 +136,14 @@ exports.getNews = function(req, res) {
                         var voto = jsonVoti[temp.id];
                         jsonNotizie[i]["voto_utente"] = voto;
                     }
-                    res.send({error:false, data:jsonNotizie})
+                    res.send({error:false, data:jsonNotizie, pagination:{page:page,pageSize : pageSize, pages : pages, total:total} })
                 })
 
             }else{
-                res.send({error:false, data:jsonNotizie})
+                res.send({error:false, data:jsonNotizie , pagination:{page:page,pageSize : pageSize, pages : pages, total:total} })
             }
         }else{
-            res.send({error:false, data:[]})
+            res.send({error:false, data:[] , pagination:{page:page,pageSize : pageSize, pages : pages, total:total} })
         }
     })
 };
@@ -207,7 +227,8 @@ exports.postNews = function(req, res) {
 
                 Promise.all(promises)
                 .then(function(result){
-                    notizia["aggiunte"] = aggiunteJson
+                    notizia["aggiunte"] = aggiunteJson;
+                    notizia["score"] = 0;
 
                     var temp = {};
                     aggiunteJson.map(function(item){

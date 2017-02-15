@@ -78,7 +78,9 @@ exports.postVote = function(req, res) {
                                             if(author){
                                                 var score = author.toJSON().score;
                                                 notifications.changeLevel(authorID,author.toJSON().level,score);
-                                                notifications.promoteNews(body.notizia_id);
+                                                if(news.toJSON().live == 0){
+                                                    notifications.promoteNews(body.notizia_id);
+                                                }
                                             }
                                         })
                                     }
@@ -136,7 +138,9 @@ exports.postVote = function(req, res) {
                                                 if(author){
                                                     var score = author.toJSON().score;
                                                     notifications.changeLevel(authorID,author.toJSON().level,score);
-                                                    notifications.promoteNews(body.notizia_id);
+                                                    if(news.toJSON().live == 0){
+                                                        notifications.promoteNews(body.notizia_id);
+                                                    }
                                                 }
                                             })
                                         }
