@@ -141,57 +141,13 @@ exports.getSingleEvent = function(req, res) {
 
     var related = [];
 
-    if(req.query.fields){
-        var fields = req.query.fields;
-        if(fields.includes('notizie')){
-            related.push('notizie');
-        }
-    }
-
     if(req.params.id){
         Evento
         .forge({id:req.params.id})
-        .fetch({withRelated : related})
+        .fetch()
         .then(function(evento){
             if(evento){
-                var jsonEvento = evento.toJSON();
-                var jsonVoti = {};
-
-                if(req.user && related.includes('notizie')){
-
-                    var promises = [];
-
-                    var singleEvent = jsonEvento['notizie'];
-
-                    for(var k = 0; k < singleEvent.length ; k++){
-                        var singleNotizia = singleEvent[k];
-
-                        promises.push(
-                            Voto
-                            .forge({user_id : req.user.id,notizia_id : singleNotizia.id})
-                            .fetch()
-                            .then(function(voto){
-                                if(voto){
-                                    var news_id = voto.get('notizia_id');
-                                    jsonVoti[news_id] = voto.toJSON();
-                                }
-                            })
-                        );
-                    }
-
-                    Promise.all(promises)
-                    .then(function(result){
-                        for(var k = 0; k < jsonEvento['notizie'].length ; k++){
-                            var singleNotizia = jsonEvento['notizie'][k];
-                            var voto = jsonVoti[singleNotizia.id];
-                            jsonEvento['notizie'][k]["voto_utente"] = voto;
-                        }
-                        res.send({error:false, data:jsonEvento})
-                    })
-
-                }else{
-                    res.send({error:false, data:evento.toJSON()})
-                }
+                res.send({error:false, data:evento.toJSON()})
             }else{
                 res.send({error:false, data:{}})
             }

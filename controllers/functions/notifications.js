@@ -2,6 +2,8 @@ var User = require('../../models/User');
 var News = require('../../models/News');
 var Voto = require('../../models/Voto');
 var NotificationToken = require('../../models/NotificationToken');
+var LocationUser = require('../../models/LocationUser');
+var haversine = require('haversine');
 
 var utils = require('./utils');
 
@@ -72,7 +74,7 @@ var sendNotificationChangeLevel = function(id,level,demoted){
     });
 };
 
-exports.pushToUsers = function(usersToPush,notizia){
+var pushToUsers = function(usersToPush,notizia){
     NotificationToken
     .where('user_id', 'IN', usersToPush)
     .fetchAll()
@@ -115,6 +117,8 @@ exports.pushToUsers = function(usersToPush,notizia){
         
     })
 };
+
+exports.pushToUsers = pushToUsers;
 
 exports.changeLevel = function(id,oldLevel,newScore){
     switch (oldLevel) {
@@ -194,7 +198,7 @@ exports.promoteNews = function(idNews){
                     var valoreNews = 0;
                     News
                     .forge({id : idNews})
-                    .fetch({withRelated:['voti']})
+                    .fetch({withRelated:['voti','aggiuntivi']})
                     .then(function(notizia){
                         if(notizia){
                             var jsonNotizia = notizia.toJSON();
@@ -213,6 +217,53 @@ exports.promoteNews = function(idNews){
 
                                     var json = salvata.toJSON();
                                     json["score"] = valoreNews;
+
+                                    // TROVO GLI UTENTI VICINO
+                                    var temp = {};
+                                    json["aggiuntivi"].map(function(item){
+                                        temp[item.tipo] = item.valore;
+                                    });
+
+                                    if(temp["LOCATION_LATITUDE"] && temp["LOCATION_LONGITUDE"]){
+                                        var latitude = temp["LOCATION_LATITUDE"];
+                                        var longitude = temp["LOCATION_LONGITUDE"];
+
+                                        var start = {
+                                            latitude : latitude,
+                                            longitude : longitude
+                                        };
+
+                                        var usersToPush = [];
+
+                                        LocationUser.forge().fetchAll()
+                                        .then(function(locations){
+                                            if(locations){
+                                                var jsonLocations = locations.toJSON();
+
+                                                for(var i = 0 ; i < jsonLocations.length ; i++){
+                                                    var end = {
+                                                        latitude : jsonLocations[i]["latitude"],
+                                                        longitude : jsonLocations[i]["longitude"]
+                                                    };
+
+                                                    if(jsonLocations[i].distance){
+                                                        if(haversine(start, end, { threshold : jsonLocations[i].distance, unit: 'km'}) ) { // Check if In Range
+                                                            usersToPush.push(jsonLocations[i].user_id);
+                                                        }
+                                                    }else{
+                                                        if(jsonLocations[i].country == temp["LOCATION_COUNTRY"]){
+                                                            usersToPush.push(jsonLocations[i].user_id);
+                                                        }
+                                                    }
+                                                }
+
+                                                pushToUsers(usersToPush, salvata);
+
+                                            }
+                                        })
+
+
+                                    }
 
                                     NotificationToken
                                     .where('user_id', json.user_id)

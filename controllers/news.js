@@ -26,6 +26,10 @@ exports.getNews = function(req, res) {
         }
     }
 
+    if(req.query.event){
+        Data = Data.where('event_id',req.query.event);
+    }
+
     var page = 1;
     var pageSize = 5;
     var total = 0;
@@ -90,11 +94,94 @@ exports.getNews = function(req, res) {
                     var roundFirst = Math.round(signFirst * orderFirst + epochFirst / 45000);
                     var roundSecond = Math.round(signSecond * orderSecond + epochSecond / 45000);
 
-                    return roundFirst < roundSecond;  
+                    if(roundFirst > roundSecond){
+                        return -1
+                    }else if(roundFirst < roundSecond){
+                        return 1;
+                    }else{
+                        return 0;
+                    } 
+                });
+            }else if(req.query.sort  && req.query.sort == "recent"){
+                jsonNotizie = jsonNotizie.sort(function(first,second){
+                    var dateFirst = Date.parse(first.created_at);
+
+                    var dateSecond = Date.parse(second.created_at);
+
+                    var epochFirst = dateFirst;
+                    var epochSecond = dateSecond;
+
+                    if(dateFirst > dateSecond){
+                        return -1
+                    }else if(dateFirst < dateSecond){
+                        return 1;
+                    }else{
+                        return 0;
+                    }  
+                });
+            }else if(req.query.sort && req.query.sort == "location" && req.query.longitude && req.query.latitude){
+                var longitudeUser = req.query.longitude;
+                var latitudeUser = req.query.latitude;
+
+                jsonNotizie.map(function(value,index,arr){
+                    var distance = 0;
+
+                    var temp = {};
+                    value["aggiuntivi"].map(function(item){
+                        temp[item.tipo] = item.valore;
+                    });
+
+                    if(temp["LOCATION_LATITUDE"] && temp["LOCATION_LONGITUDE"]){
+                        var latitude = temp["LOCATION_LATITUDE"];
+                        var longitude = temp["LOCATION_LONGITUDE"];
+
+                        var start = {
+                            latitude : latitude,
+                            longitude : longitude
+                        };
+
+                        var end = {
+                            latitude : latitudeUser,
+                            longitude : longitudeUser
+                        };
+
+                        distance = haversine(start, end, {  unit: 'km'})
+                    }else{
+                        distance = 1000000;
+                    }
+
+                    jsonNotizie[index]["distance"] = distance;
+
+                });
+
+                jsonNotizie = jsonNotizie.sort(function(first,second){
+                    if(first.distance > second.distance){
+                        return 1
+                    }else if(first.distance < second.distance){
+                        return -1;
+                    }else{
+                        return 0;
+                    }
+                });
+            }else if(req.query.sort && req.query.sort == "score"){
+                jsonNotizie = jsonNotizie.sort(function(first,second){
+                    if(first.score > second.score){
+                        return -1
+                    }else if(first.score < second.score){
+                        return 1;
+                    }else{
+                        return 0;
+                    }
                 });
             }else{
                 jsonNotizie = jsonNotizie.sort(function(first,second){
-                    return first.score < second.score;
+                    if(first.score > second.score){
+                        return -1
+                    }else if(first.score < second.score){
+                        return 1;
+                    }else{
+                        return 0;
+                    }
                 });
             }
 
@@ -230,57 +317,7 @@ exports.postNews = function(req, res) {
                     notizia["aggiunte"] = aggiunteJson;
                     notizia["score"] = 0;
 
-                    var temp = {};
-                    aggiunteJson.map(function(item){
-                        temp[item.tipo] = item.valore;
-                    });
-
-                    if(temp["LOCATION_LATITUDE"] && temp["LOCATION_LONGITUDE"]){
-                        var latitude = temp["LOCATION_LATITUDE"];
-                        var longitude = temp["LOCATION_LONGITUDE"];
-
-                        var start = {
-                            latitude : latitude,
-                            longitude : longitude
-                        };
-
-                        var usersToPush = [];
-
-                        LocationUser.forge().fetchAll()
-                        .then(function(locations){
-                            if(locations){
-                                var jsonLocations = locations.toJSON();
-
-                                for(var i = 0 ; i < jsonLocations.length ; i++){
-                                    var end = {
-                                        latitude : jsonLocations[i]["latitude"],
-                                        longitude : jsonLocations[i]["longitude"]
-                                    };
-
-                                    if(jsonLocations[i].distance){
-                                        if(haversine(start, end, { threshold : jsonLocations[i].distance, unit: 'km'}) ) { // Check if In Range
-                                            usersToPush.push(jsonLocations[i].user_id);
-                                        }
-                                    }else{
-                                        if(jsonLocations[i].country == temp["LOCATION_COUNTRY"]){
-                                            usersToPush.push(jsonLocations[i].user_id);
-                                        }
-                                    }
-                                }
-
-                                notifications.pushToUsers(usersToPush, notizia);
-
-                                res.send({error:false, data:notizia})
-
-                            }else{
-                                res.send({error:false, data:notizia})
-                            }
-                        })
-
-
-                    }else{
-                        res.send({error:false, data:notizia})
-                    }
+                    res.send({error:false, data:notizia})
 
                     
                 })
