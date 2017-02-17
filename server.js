@@ -118,7 +118,9 @@ app.delete('/api/profile/location', auth.authenticate, profileController.deleteU
 app.put('/api/profile/location/distance', auth.authenticate, profileController.userLocationDistance);
 app.post('/api/register/ios', auth.authenticate, profileController.locationNotification);
 
+app.put('/api/news/promote/:id', auth.modOrAdmin, newsController.promote);
 app.get('/api/news/:id', auth.passUser, newsController.getSingleNews);
+app.delete('/api/news/:id', auth.modOrAdmin, newsController.delete);
 app.get('/api/news', auth.passUser, newsController.getNews);
 app.post('/api/news', auth.authenticate, newsController.postNews);
 app.post('/api/vote', auth.authenticate, voteController.postVote);

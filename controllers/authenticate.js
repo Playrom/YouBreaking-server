@@ -17,6 +17,19 @@ exports.authenticate = [
 ];
 
 // Middleware per verificare se i dati vengono modificati dall'utente stesso o da un amministratore
+exports.modOrAdmin = [
+    passport.authenticate('jwt', { session: false}),
+    function(req, res, next){
+        console.log(req.user.toJSON().level);
+        if(req.user.toJSON().level == "ADMIN" || req.user.toJSON().level == "MOD"){ // Livello 1000 = Admin
+            next();
+        }else{
+            res.status(401).send({error:true,message:"Livello Troppo Basso"})
+        }
+    }
+];
+
+// Middleware per verificare se i dati vengono modificati dall'utente stesso o da un amministratore
 exports.authOrAdmin = [
     passport.authenticate('jwt', { session: false}),
     function(req, res, next){

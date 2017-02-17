@@ -273,6 +273,49 @@ exports.getSingleNews = function(req, res) {
     }
 };
 
+
+exports.promote = function(req, res) {
+
+    if(req.params.id){
+        News
+        .forge({id:req.params.id})
+        .save('live',1)
+        .then(function(notizia){
+
+            if(notizia){
+                return res.status(200).send({error:false});
+            }else{
+            res.status(404).send({error:true, message:"Post Non Trovato"});
+            }
+        })
+        .catch(function(err){
+            res.status(404).send({error:true, message:"Post Non Trovato"});
+        });
+    }
+};
+
+exports.delete = function(req, res) {
+
+    if(req.params.id){
+        News
+        .forge({id:req.params.id})
+        .fetch()
+        .then(function(notizia){
+
+            if(notizia){
+                notizia.destroy().then(function(distrutta){
+                    return res.status(200).send({error:false});
+                });
+            }else{
+                res.status(404).send({error:true, message:"Post Non Trovato"});
+            }
+        })
+        .catch(function(err){
+            res.status(404).send({error:true, message:"Post Non Trovato"});
+        });
+    }
+};
+
 exports.postNews = function(req, res) {
 
     if(req.user && req.body){
