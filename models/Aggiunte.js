@@ -9,12 +9,12 @@ var Aggiunte = bookshelf.Model.extend({
   uuid: true,
   hasTimestamps: true,
 
-  notizie : function(){
-    return this.belongsToMany(News);
+  notizia : function(){
+    return this.belongsTo('News','notizia_id');
   },
 
-      hidden: ['created_at', 'updated_at', 'notizia_id'],
+      hidden: ['created_at', 'updated_at'],
 
 });
 
-module.exports = Aggiunte;
+module.exports = bookshelf.model('Aggiunte',Aggiunte);

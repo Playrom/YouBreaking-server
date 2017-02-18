@@ -322,13 +322,18 @@ exports.postNews = function(req, res) {
         var idUtente = req.user.id
         var body = req.body
 
-
-        News.forge({
+        var data = {
             user_id : idUtente ,
             title : body.title || "",
             text : body.text || "",
             event_id : body.eventId || null
-        })
+        }
+
+        if(req.user.leve == "EDITOR"){
+            data["live"] = 1;
+        }
+
+        News.forge(data)
         .save()
         .then(function(news){
             var notizia = news.toJSON();
@@ -359,6 +364,7 @@ exports.postNews = function(req, res) {
                 .then(function(result){
                     notizia["aggiunte"] = aggiunteJson;
                     notizia["score"] = 0;
+                    notifications.promoteNews(notizia.id);
 
                     res.send({error:false, data:notizia})
 

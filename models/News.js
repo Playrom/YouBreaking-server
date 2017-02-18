@@ -21,8 +21,13 @@ var News = bookshelf.Model.extend({
   },
 
   aggiuntivi : function(){
-    return this.hasMany(Aggiunte,'notizia_id');
+    return this.hasMany('Aggiunte','notizia_id');
   },
+
+  links: function () {
+      return this.aggiuntivi().query('where', 'tipo', 'LINK');
+  },
+
 
   voti : function(){
     return this.hasMany(Voto,'notizia_id');

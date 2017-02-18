@@ -3,6 +3,8 @@ var News = require('../../models/News');
 var Voto = require('../../models/Voto');
 var NotificationToken = require('../../models/NotificationToken');
 var LocationUser = require('../../models/LocationUser');
+var Aggiunte = require('../../models/Aggiunte');
+
 var haversine = require('haversine');
 
 var utils = require('./utils');
@@ -201,114 +203,146 @@ exports.promoteNews = function(idNews){
                     .fetch({withRelated:['voti','aggiuntivi']})
                     .then(function(notizia){
                         if(notizia){
+                            
+
+                            var approve = function(notizia,valoreNews,valoreSoglia){
+
+                                if(valoreNews >= valoreSoglia && valoreNews > 0){ // Notizia Approvata
+                                    notizia.set('live',1);
+                                    notizia.save()
+                                    .then(function(salvata){
+
+                                        var json = salvata.toJSON();
+                                        json["score"] = valoreNews;
+
+                                        if(temp["LOCATION_LATITUDE"] && temp["LOCATION_LONGITUDE"]){
+                                            var latitude = temp["LOCATION_LATITUDE"];
+                                            var longitude = temp["LOCATION_LONGITUDE"];
+
+                                            var start = {
+                                                latitude : latitude,
+                                                longitude : longitude
+                                            };
+
+                                            var usersToPush = [];
+
+                                            LocationUser.forge().fetchAll()
+                                            .then(function(locations){
+                                                if(locations){
+                                                    var jsonLocations = locations.toJSON();
+
+                                                    for(var i = 0 ; i < jsonLocations.length ; i++){
+                                                        var end = {
+                                                            latitude : jsonLocations[i]["latitude"],
+                                                            longitude : jsonLocations[i]["longitude"]
+                                                        };
+
+                                                        if(jsonLocations[i].distance){
+                                                            if(haversine(start, end, { threshold : jsonLocations[i].distance, unit: 'km'}) ) { // Check if In Range
+                                                                usersToPush.push(jsonLocations[i].user_id);
+                                                            }
+                                                        }else{
+                                                            if(jsonLocations[i].country == temp["LOCATION_COUNTRY"]){
+                                                                usersToPush.push(jsonLocations[i].user_id);
+                                                            }
+                                                        }
+                                                    }
+
+                                                    pushToUsers(usersToPush, salvata);
+
+                                                }
+                                            })
+
+
+                                        }
+
+                                        NotificationToken
+                                        .where('user_id', json.user_id)
+                                        .fetch()
+                                        .then(function(user){
+
+                                            if(user){
+
+                                                var tokens = user.toJSON()["token"];
+
+                                                // Prepare a new notification
+                                                var notification = new apn.Notification();
+
+                                                // Specify your iOS app's Bundle ID (accessible within the project editor)
+                                                notification.topic = 'com.giorgioromano.news.youbreaking';
+
+                                                // Set expiration to 1 hour from now (in case device is offline)
+                                                notification.expiry = Math.floor(Date.now() / 1000) + 3600;
+
+                                                // Set app badge indicator
+                                                notification.badge = 0;
+
+                                                // Play ping.aiff sound when the notification is received
+                                                notification.sound = 'ping.aiff';
+
+                                                // Display the following message (the actual notification text, supports emoji)
+                                                notification.title = "La tua notizia è stata pubblicata!";
+                                                notification.body = "La tua notizia con il titolo \"" + json.title + "\" è stata pubblicata";
+
+                                                notification.payload = {type:"NEWS_POSTED" , data : json};
+                                                
+                                                // Actually send the notification
+                                                apnProvider.send(notification, tokens).then(function(result) {  
+                                                    // Check the result for any failed devices
+                                                    console.log(result);
+                                                });
+
+                                            }
+                                            
+                                        });
+                                    });
+                                }
+                            } // FINE approve
+
                             var jsonNotizia = notizia.toJSON();
+
+                            var temp = {};
+                            jsonNotizia["aggiuntivi"].map(function(item){
+                                temp[item.tipo] = item.valore;
+                            });
 
                             for(var i = 0;i<jsonNotizia["voti"].length;i++){
                                 valoreNews = valoreNews + utils.valoreVoto(jsonNotizia["voti"][i].voto);
                             }
 
-                            console.log("Valore News " + valoreNews);
-
-
-                            if(valoreNews >= valoreSoglia && valoreNews > 0){ // Notizia Approvata
-                                notizia.set('live',1);
-                                notizia.save()
-                                .then(function(salvata){
-
-                                    var json = salvata.toJSON();
-                                    json["score"] = valoreNews;
-
-                                    // TROVO GLI UTENTI VICINO
-                                    var temp = {};
-                                    json["aggiuntivi"].map(function(item){
-                                        temp[item.tipo] = item.valore;
-                                    });
-
-                                    if(temp["LOCATION_LATITUDE"] && temp["LOCATION_LONGITUDE"]){
-                                        var latitude = temp["LOCATION_LATITUDE"];
-                                        var longitude = temp["LOCATION_LONGITUDE"];
-
-                                        var start = {
-                                            latitude : latitude,
-                                            longitude : longitude
-                                        };
-
-                                        var usersToPush = [];
-
-                                        LocationUser.forge().fetchAll()
-                                        .then(function(locations){
-                                            if(locations){
-                                                var jsonLocations = locations.toJSON();
-
-                                                for(var i = 0 ; i < jsonLocations.length ; i++){
-                                                    var end = {
-                                                        latitude : jsonLocations[i]["latitude"],
-                                                        longitude : jsonLocations[i]["longitude"]
-                                                    };
-
-                                                    if(jsonLocations[i].distance){
-                                                        if(haversine(start, end, { threshold : jsonLocations[i].distance, unit: 'km'}) ) { // Check if In Range
-                                                            usersToPush.push(jsonLocations[i].user_id);
-                                                        }
-                                                    }else{
-                                                        if(jsonLocations[i].country == temp["LOCATION_COUNTRY"]){
-                                                            usersToPush.push(jsonLocations[i].user_id);
-                                                        }
-                                                    }
-                                                }
-
-                                                pushToUsers(usersToPush, salvata);
-
+                            if(temp["LINK"]){
+                                var valoreLink = 0;
+                                var domain = utils.getDomain(temp["LINK"]);
+                                
+                                Aggiunte
+                                .where("tipo","LINK")
+                                .where("valore","LIKE","%" + domain + "%")
+                                .fetchAll({withRelated:['notizia']})
+                                .then(function(links){
+                                    if(links){
+                                        for(var n = 0 ; n < links.length ; n++){
+                                            if(links.toJSON()[n].notizia.live == 1){
+                                                valoreLink = valoreLink + 1;
                                             }
-                                        })
-
-
+                                        }
                                     }
 
-                                    NotificationToken
-                                    .where('user_id', json.user_id)
-                                    .fetch()
-                                    .then(function(user){
+                                    console.log("Valore Link : " + valoreLink);
 
-                                        if(user){
+                                    valoreNews = valoreNews + valoreLink;
+                                    approve(notizia,valoreNews,valoreSoglia);
 
-                                            var tokens = user.toJSON()["token"];
 
-                                            // Prepare a new notification
-                                            var notification = new apn.Notification();
+                                })
 
-                                            // Specify your iOS app's Bundle ID (accessible within the project editor)
-                                            notification.topic = 'com.giorgioromano.news.youbreaking';
-
-                                            // Set expiration to 1 hour from now (in case device is offline)
-                                            notification.expiry = Math.floor(Date.now() / 1000) + 3600;
-
-                                            // Set app badge indicator
-                                            notification.badge = 0;
-
-                                            // Play ping.aiff sound when the notification is received
-                                            notification.sound = 'ping.aiff';
-
-                                            // Display the following message (the actual notification text, supports emoji)
-                                            notification.title = "La tua notizia è stata pubblicata!";
-                                            notification.body = "La tua notizia con il titolo \"" + json.title + "\" è stata pubblicata";
-
-                                            notification.payload = {type:"NEWS_POSTED" , data : json};
-                                            
-                                            // Actually send the notification
-                                            apnProvider.send(notification, tokens).then(function(result) {  
-                                                // Check the result for any failed devices
-                                                console.log(result);
-                                            });
-
-                                        }
-                                        
-                                    });
-                                });
+                            }else{
+                                approve(notizia,valoreNews,valoreSoglia);
                             }
+
+                            console.log("Valore News " + valoreNews);
+                            
                         }
                     });
-
                 }
             });
 
