@@ -50,8 +50,8 @@ app.set('view engine', 'handlebars');
 app.set('port', process.env.PORT || 3000);
 app.use(compression());
 app.use(logger('dev'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json({limit: '20mb' , extended: true }));
+app.use(bodyParser.urlencoded({limit: '20mb' , extended: true }));
 app.use(expressValidator());
 app.use(methodOverride('_method'));
 app.use(session({ secret: process.env.SESSION_SECRET, resave: true, saveUninitialized: true }));
@@ -143,6 +143,7 @@ var http = require('http');
 
 
 if (process.env.PRODUCTION == "false"){
+  
   var httpServer = http.createServer(app);
   httpServer.listen(80,function(){
     console.log('Server listening on port ' + 80);

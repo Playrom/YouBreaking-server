@@ -1,3 +1,6 @@
+var fs = require('fs');
+var path = require('path');
+
 var Promise = require("bluebird");
 const haversine = require('haversine')
 var notifications = require('./functions/notifications');
@@ -27,7 +30,7 @@ exports.getNews = function(req, res) {
     }
 
     if(req.query.event){
-        Data = Data.where('event_id',req.query.event);
+        Data = Data.where('event_id','LIKE',req.query.event);
     }
 
     var page = 1;
@@ -347,17 +350,54 @@ exports.postNews = function(req, res) {
 
                 for(var i = 0; i < agg.length ; i++){
                     var single = agg[i];
-                    promises.push(
-                        Aggiunte
-                        .forge({notizia_id : notizia.id, tipo : single.tipo, valore : single.valore })
-                        .save()
-                        .then(function(aggiunta){
-                            if(aggiunta){
-                                var news_id = aggiunta.get('notizia_id');
-                                aggiunteJson.push(aggiunta.toJSON());
-                            }
-                        })
-                    );
+
+                    if(single.tipo == "PHOTO"){
+
+                        var img = single.valore;
+                        var buf = new Buffer(img, 'base64');
+
+
+                        promises.push(
+                            Aggiunte
+                            .forge({notizia_id : notizia.id})
+                            .save()
+                            .then(function(aggiunta){
+                                if(aggiunta){
+                                    var idPhoto = aggiunta.id;
+
+                                    fs.writeFileSync(path.join(__dirname, '../public/photos/' , idPhoto + ".jpeg"), buf, function(err) {
+                                        if (err) throw err;
+                                            console.log("Wrote sitemap to XML");
+                                    });
+                                    
+                                    var singleJson = aggiunta.toJSON();
+                                    singleJson["tipo"] = "PHOTO";
+                                    singleJson["valore"] = idPhoto + ".jpeg";
+
+                                    aggiunteJson.push(singleJson);
+
+                                    aggiunta.save({tipo : "PHOTO", valore : idPhoto + ".jpeg"}).then(function(saved){
+
+                                    })
+
+
+                                }
+                            })
+                        );
+                    }else{
+
+                        promises.push(
+                            Aggiunte
+                            .forge({notizia_id : notizia.id, tipo : single.tipo, valore : single.valore })
+                            .save()
+                            .then(function(aggiunta){
+                                if(aggiunta){
+                                    var news_id = aggiunta.get('notizia_id');
+                                    aggiunteJson.push(aggiunta.toJSON());
+                                }
+                            })
+                        );
+                    }
                 }
 
                 Promise.all(promises)
