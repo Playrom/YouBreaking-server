@@ -310,6 +310,10 @@ exports.promoteNews = function(idNews){
                                 valoreNews = valoreNews + utils.valoreVoto(jsonNotizia["voti"][i].voto);
                             }
 
+                            if(temp["PHOTO"]){
+                                valoreNews = valoreNews + 5;
+                            }
+
                             if(temp["LINK"]){
                                 var valoreLink = 0;
                                 var domain = utils.getDomain(temp["LINK"]);
