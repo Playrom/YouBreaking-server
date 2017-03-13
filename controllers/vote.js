@@ -167,8 +167,8 @@ exports.postVote = function(req, res) {
 
 exports.getWaitVotesUser = function(req, res) {
     News
-    .where('live',0)
     .forge()
+    .where('live',0)
     .orderBy('created_at', 'DESC')
     .fetchAll({withRelated:['aggiuntivi','evento']})
     .then(function(notizie){
