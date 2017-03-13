@@ -53,7 +53,7 @@ var sendNotificationChangeLevel = function(id,level,demoted){
             //notification.badge = 0;
 
             // Play ping.aiff sound when the notification is received
-            notification.sound = 'ping.aiff';
+            notification.sound = 'default';
 
             if(demoted){
                 notification.title = "Il Tuo Livello è diminuito";
@@ -100,7 +100,7 @@ var pushToUsers = function(usersToPush,notizia){
             //notification.badge = 0;
 
             // Play ping.aiff sound when the notification is received
-            notification.sound = 'ping.aiff';
+            notification.sound = 'default';
 
             // Display the following message (the actual notification text, supports emoji)
             notification.title = notizia["title"];
@@ -125,7 +125,7 @@ exports.pushToUsers = pushToUsers;
 exports.changeLevel = function(id,oldLevel,newScore){
     switch (oldLevel) {
         case "USER":
-            if(newScore > 2){ // PROMUOVI AD AUTORE
+            if(newScore > 20){ // PROMUOVI AD AUTORE
                 User.forge({id:id}).save('level','AUTHOR')
                 .then(function(user){
                     sendNotificationChangeLevel(id,"Autore",false);
@@ -136,7 +136,7 @@ exports.changeLevel = function(id,oldLevel,newScore){
             }
         break;
         case "AUTHOR":
-            if(newScore > 500){ // PROMUOVI AD AUTORE
+            if(newScore > 300){ // PROMUOVI AD AUTORE
                 User.forge({id:id}).save('level','EDITOR')
                 .then(function(user){
                     sendNotificationChangeLevel(id,"Editor",false);
@@ -144,7 +144,7 @@ exports.changeLevel = function(id,oldLevel,newScore){
                 .catch(function(err){
                     console.log(err);
                 });
-            }else if(newScore < 2){ // DEMOTION AD USER
+            }else if(newScore < 50){ // DEMOTION AD USER
                 User.forge({id:id}).save('level','USER')
                 .then(function(user){
                     sendNotificationChangeLevel(id,"Utente",true);
@@ -155,7 +155,7 @@ exports.changeLevel = function(id,oldLevel,newScore){
             }
         break;
         case "EDITOR":
-            if(newScore < 400){ // PROMUOVI AD AUTORE
+            if(newScore < 200){ // PROMUOVI AD AUTORE
                 User.forge({id:id}).save('level','AUTHOR')
                 .then(function(user){
                     sendNotificationChangeLevel(id,"Autore",true);
@@ -278,7 +278,7 @@ exports.promoteNews = function(idNews){
                                                 notification.badge = 0;
 
                                                 // Play ping.aiff sound when the notification is received
-                                                notification.sound = 'ping.aiff';
+                                                notification.sound = 'default';
 
                                                 // Display the following message (the actual notification text, supports emoji)
                                                 notification.title = "La tua notizia è stata pubblicata!";
@@ -311,7 +311,7 @@ exports.promoteNews = function(idNews){
                             }
 
                             if(temp["PHOTO"]){
-                                valoreNews = valoreNews + 5;
+                                valoreNews = valoreNews + 3;
                             }
 
                             if(temp["LINK"]){
@@ -353,3 +353,65 @@ exports.promoteNews = function(idNews){
         }
     });
 };
+
+
+var sendNotification = function(notizia,type){
+    var json = notizia;
+
+    if(type == "LOCAL"){
+
+
+        var temp = {};
+        json["aggiuntivi"].map(function(item){
+            temp[item.tipo] = item.valore;
+        });
+
+        LocationUser.forge().fetchAll()
+        .then(function(locations){
+            if(locations){
+                var jsonLocations = locations.toJSON();
+
+                var usersToPush = [];
+
+                for(var i = 0 ; i < jsonLocations.length ; i++){
+                    var end = {
+                        latitude : jsonLocations[i]["latitude"],
+                        longitude : jsonLocations[i]["longitude"]
+                    };
+
+                    if(jsonLocations[i].distance){
+                        if(haversine(start, end, { threshold : jsonLocations[i].distance, unit: 'km'}) ) { // Check if In Range
+                            usersToPush.push(jsonLocations[i].user_id);
+                        }
+                    }else{
+                        if(jsonLocations[i].country == temp["LOCATION_COUNTRY"]){
+                            usersToPush.push(jsonLocations[i].user_id);
+                        }
+                    }
+                }
+
+                pushToUsers(usersToPush, notizia);
+
+            }
+        })
+    }else if(type == "GLOBAL"){
+        LocationUser.forge().fetchAll()
+        .then(function(locations){
+            if(locations){
+                var jsonLocations = locations.toJSON();
+                var usersToPush = [];
+
+                for(var i = 0 ; i < jsonLocations.length ; i++){
+                    usersToPush.push(jsonLocations[i].user_id);
+                }
+
+                pushToUsers(usersToPush, notizia);
+
+            }
+        })
+    }
+
+
+}
+
+exports.sendNotification = sendNotification;
