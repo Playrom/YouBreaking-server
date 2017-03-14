@@ -417,7 +417,7 @@ exports.postNews = function(req, res) {
                     notizia["aggiunte"] = aggiunteJson;
                     notizia["score"] = 0;
 
-                    if(user.level == "EDITOR" || user.level == "MOD" && user.level == "ADMIN"){
+                    if(user.level == "EDITOR" || user.level == "MOD" || user.level == "ADMIN"){
                         if(req.body.notification == "GLOBAL" || req.body.notification == "LOCAL" ){
                             notifications.sendNotification(notizia,req.body.notification);
                         }
