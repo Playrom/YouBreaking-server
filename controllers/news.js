@@ -33,6 +33,10 @@ exports.getNews = function(req, res) {
         Data = Data.where('event_id','LIKE',req.query.event);
     }
 
+    if(req.query.author){
+        Data = Data.where('user_id','LIKE',req.query.author);
+    }
+
     var page = 1;
     var pageSize = 5;
     var total = 0;

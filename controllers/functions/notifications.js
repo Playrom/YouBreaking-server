@@ -295,6 +295,8 @@ exports.promoteNews = function(idNews){
                                             }
                                             
                                         });
+
+                                        notificateToVoters(notizia);
                                     });
                                 }
                             } // FINE approve
@@ -335,6 +337,7 @@ exports.promoteNews = function(idNews){
 
                                     valoreNews = valoreNews + valoreLink;
                                     approve(notizia,valoreNews,valoreSoglia);
+                                    
 
 
                                 })
@@ -353,6 +356,10 @@ exports.promoteNews = function(idNews){
         }
     });
 };
+
+var notificateToVoters = function(notizia){
+
+}
 
 
 var sendNotification = function(notizia,type){
