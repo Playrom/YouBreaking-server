@@ -32,6 +32,53 @@ var News = bookshelf.Model.extend({
   voti : function(){
     return this.hasMany(Voto,'notizia_id');
   },
+
+  virtuals: {
+    score : function(){
+      var score = 0;
+      var voti = this.related('voti').toJSON();
+      if(voti){
+        for(var i = 0 ; i < voti.length ; i++){
+          switch (voti[i]["voto"]) {
+            case "UP":
+              score = score + 1 ;
+              break;
+            case "AUTHOR_UP":
+              score = score + 2 ;
+              break;
+            case "EDITOR_UP":
+              score = score + 3 ;
+              break;
+            case "MOD_UP":
+              score = score + 5 ;
+              break;
+            case "ADMIN_UP":
+              score = score + 5 ;
+              break;
+            case "DOWN":
+              score = score - 1 ;
+              break;
+            case "AUTHOR_DOWN":
+              score = score - 2 ;
+              break;
+            case "EDITOR_DOWN":
+              score = score - 3 ;
+              break;
+            case "MOD_DOWN":
+              score = score - 5 ;
+              break;
+            case "ADMIN_DOWN":
+              score = score - 5 ;
+              break;
+            default:
+              break;
+          }
+        }
+      }
+      return score;
+    }
+  },
+
   hidden: ['event_id'],
 
 });

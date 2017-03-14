@@ -207,7 +207,7 @@ exports.promoteNews = function(idNews){
 
                             var approve = function(notizia,valoreNews,valoreSoglia){
 
-                                if(valoreNews >= valoreSoglia && valoreNews > 0){ // Notizia Approvata
+                                if( (valoreNews >= valoreSoglia && valoreNews > 0) || notizia.live == 1) { // Notizia Approvata
                                     notizia.set('live',1);
                                     notizia.save()
                                     .then(function(salvata){

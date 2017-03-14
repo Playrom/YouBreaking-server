@@ -18,7 +18,6 @@ exports.postVote = function(req, res) {
     if(req.user && req.body){
         var idUtente = req.user.id;
         var body = req.body;
-        console.log(body);
 
         if(body.notizia_id, body.voto){
             Voto
@@ -45,9 +44,16 @@ exports.postVote = function(req, res) {
                     .then(function(distrutto){
 
                         if(body.voto == "NO"){
-                            News.forge({id:body.notizia_id}).fetch()
+                            News.forge({id:body.notizia_id}).fetch({withRelated:['voti']})
                             .then(function(news){
+
                                 if(news){
+
+                                    var data = {
+                                        voto: body.voto,
+                                        score: news.toJSON().score
+                                    }
+                                    
                                     var authorID = news.toJSON().user_id;
                                     User.forge({id:authorID}).fetch({withRelated:['notizie','notizie.voti']})
                                     .then(function(author){
@@ -56,9 +62,12 @@ exports.postVote = function(req, res) {
                                             notifications.changeLevel(authorID,author.toJSON().level,score);
                                         }
                                     })
+
+                                    return res.status(200).send({error:false,message:"Voto Cancellato",data:data});
+
                                 }
                             })
-                            return res.status(200).send({error:false,message:"Voto Cancellato"});
+
                         }else{
                         
                             Voto
@@ -69,9 +78,15 @@ exports.postVote = function(req, res) {
                             })
                             .save()
                             .then(function(vote){
-                                News.forge({id:body.notizia_id}).fetch()
+                                News.forge({id:body.notizia_id}).fetch({withRelated:['voti']})
                                 .then(function(news){
                                     if(news){
+
+                                        var data = {
+                                            voto: body.voto,
+                                            score: news.toJSON().score
+                                        }
+                                        
                                         var authorID = news.toJSON().user_id;
                                         User.forge({id:authorID}).fetch({withRelated:['notizie','notizie.voti']})
                                         .then(function(author){
@@ -83,9 +98,11 @@ exports.postVote = function(req, res) {
                                                 }
                                             }
                                         })
+
+                                        return res.status(200).send({error:false,message:"Voto Sostituito",data:data});
+                                        
                                     }
                                 })
-                                return res.status(200).send({error:false,message:"Voto Sostituito"});
                             })
 
                         }
@@ -93,9 +110,15 @@ exports.postVote = function(req, res) {
                 }else{
 
                     if(body.voto == "NO"){
-                        News.forge({id:body.notizia_id}).fetch()
+                        News.forge({id:body.notizia_id}).fetch({withRelated:['voti']})
                         .then(function(news){
                             if(news){
+
+                                var data = {
+                                    voto: body.voto,
+                                    score: news.toJSON().score
+                                }
+                                
                                 var authorID = news.toJSON().user_id;
                                 User.forge({id:authorID}).fetch({withRelated:['notizie','notizie.voti']})
                                 .then(function(author){
@@ -104,12 +127,14 @@ exports.postVote = function(req, res) {
                                         notifications.changeLevel(authorID,author.toJSON().level,score);
                                     }
                                 })
+
+                                return res.status(200).send({error:false,message:"Voto Cancellato",data:data});
+                                
                             }
                         })
-                        return res.status(200).send({error:false,message:"Voto Cancellato"});
                     }else{
 
-                        User.forge({id:idUtente}).fetch().then(function(votante){
+                        User.forge({id:idUtente}).fetch({withRelated:['voti']}).then(function(votante){
                             if(votante){
                                 var votoDaInserire = "UP";
 
@@ -132,6 +157,12 @@ exports.postVote = function(req, res) {
                                     News.forge({id:body.notizia_id}).fetch()
                                     .then(function(news){
                                         if(news){
+
+                                            var data = {
+                                                voto: body.voto,
+                                                score: news.toJSON().score
+                                            }
+
                                             var authorID = news.toJSON().user_id;
                                             User.forge({id:authorID}).fetch({withRelated:['notizie','notizie.voti']})
                                             .then(function(author){
@@ -143,9 +174,12 @@ exports.postVote = function(req, res) {
                                                     }
                                                 }
                                             })
+
+                                            return res.status(200).send({error:false,message:"Voto Inserito",data:data});
+
+                                            
                                         }
                                     })
-                                    return res.status(200).send({error:false,message:"Voto Inserito"});
                                 })
 
                                 
