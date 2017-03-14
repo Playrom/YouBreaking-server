@@ -120,7 +120,7 @@ app.post('/api/register/ios', auth.authenticate, profileController.locationNotif
 
 app.put('/api/news/promote/:id', auth.modOrAdmin, newsController.promote);
 app.get('/api/news/:id', auth.passUser, newsController.getSingleNews);
-app.delete('/api/news/:id', auth.modOrAdmin, newsController.delete);
+app.delete('/api/news/:id', auth.authenticate, newsController.delete);
 app.get('/api/news', auth.passUser, newsController.getNews);
 app.post('/api/news', auth.authenticate, newsController.postNews);
 app.post('/api/vote', auth.authenticate, voteController.postVote);

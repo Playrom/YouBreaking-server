@@ -304,15 +304,21 @@ exports.promote = function(req, res) {
 exports.delete = function(req, res) {
 
     if(req.params.id){
+
         News
         .forge({id:req.params.id})
         .fetch()
         .then(function(notizia){
 
             if(notizia){
-                notizia.destroy().then(function(distrutta){
-                    return res.status(200).send({error:false});
-                });
+
+                if(req.user.toJSON().level == "ADMIN" || req.user.toJSON().level == "MOD" || req.user.toJSON().id == notizia.toJSON().user_id){ // Livello 1000 = Admin
+                    notizia.destroy().then(function(distrutta){
+                        return res.status(200).send({error:false});
+                    });
+                }else{
+                        return res.status(400).send({error:true,message:"Unauthorized"})
+                }
             }else{
                 res.status(404).send({error:true, message:"Post Non Trovato"});
             }
