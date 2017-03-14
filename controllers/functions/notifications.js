@@ -365,6 +365,9 @@ var notificateToVoters = function(notizia){
 var sendNotification = function(notizia,type){
     var json = notizia;
 
+    console.log(json);
+    console.log(notizia);
+
     if(type == "LOCAL"){
 
 

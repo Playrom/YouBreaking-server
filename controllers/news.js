@@ -425,21 +425,21 @@ exports.postNews = function(req, res) {
                         notifications.promoteNews(notizia.id);
                     }
 
-                    res.send({error:false, data:notizia})
+                    return res.send({error:false, data:notizia})
 
                     
                 })
 
             }else{
-                res.send({error:false, data:notizie.toJSON()})
+                return res.send({error:false, data:notizie.toJSON()})
             }
         })
         .catch(function(err){
             console.log(err);
-            res.status(500).send({error:true,message:err.toString()});
+            return res.status(500).send({error:true,message:err.toString()});
         })
     }else{
-        res.status(500).send({error:true,message:"Errore Generale"});
+        return res.status(500).send({error:true,message:"Errore Generale"});
     }
 };
 
