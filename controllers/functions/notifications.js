@@ -366,7 +366,7 @@ var sendNotification = function(notizia,type){
     var json = notizia;
 
     console.log(json);
-    console.log(notizia);
+    console.log(type);
 
     if(type == "LOCAL"){
 
