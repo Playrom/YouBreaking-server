@@ -61,7 +61,7 @@ exports.getNews = function(req, res) {
             var jsonNotizie = notizie.toJSON();
 
             jsonNotizie.map(function(value,index,arr){
-                var score = 1;
+                var score = 0;
                 value['voti'].map(function(val,i,a){
                     score = score + utils.valoreVoto(val.voto);
                 });
