@@ -99,7 +99,7 @@ exports.getNews = function(req, res) {
 
                             distance = haversine(start, end, {  unit: 'km'})
                         }else{
-                            distance = 1000000;
+                            distance = 100;
                         }
 
                         jsonNotizie[index]["distance"] = distance;
@@ -108,50 +108,49 @@ exports.getNews = function(req, res) {
 
                 }
 
-                jsonNotizie = jsonNotizie.sort(function(first,second){
+                jsonNotizie = jsonNotizie.map(function(first,index,arr){
                     var dateFirst = Date.parse(first.created_at);
 
-                    var dateSecond = Date.parse(second.created_at);
-
                     var epochFirst = dateFirst / 1000;
-                    var epochSecond = dateSecond / 1000;
 
                     var scoreFirst = first.score;
-                    var scoreSecond = second.score;
 
                     var orderFirst =  Math.log10(Math.max(Math.abs(scoreFirst),1)) ;
-                    var orderSecond = Math.log10(Math.max(Math.abs(scoreSecond),1)) ;
 
                     var signFirst = 0;
-                    var signSecond = 0;
 
                     if(scoreFirst > 0){
                         signFirst = 1;
                     }else if(scoreFirst < 0){
                         signFirst = -1;
                     }
-
-                    if(scoreSecond > 0){
-                        signSecond = 1;
-                    }else if(scoreSecond < 0){
-                        signSecond = -1;
-                    }
                     
                     if(req.query.longitude && req.query.latitude){
-                        var roundFirst = Math.round(45000 * signFirst * orderFirst +  ( epochFirst / ( 45000 * first.distance ) ) );
-                        var roundSecond = Math.round(45000 * signSecond * orderSecond + ( epochSecond / ( 45000 * second.distance ) ) );
+
+                        if(first.distance < 1){
+                            first.distance = 1;
+                        }
+
+                        var roundFirst =  ( signFirst * orderFirst / Math.log10(1 + first.distance) +  ( epochFirst /  45000   ) ) ;
+                        first.round_score = roundFirst;
+                        //console.log(first.title + ": " + roundFirst);
+                        return first;
 
                     }else{
                         var roundFirst = Math.round(signFirst * orderFirst +  ( epochFirst / 45000 ) );
-                        var roundSecond = Math.round(signSecond * orderSecond + ( epochSecond / 45000 ) );
+                        first.round_score = roundFirst;
+                        //console.log(first.title + ": " + roundFirst);
+                        return first;
                     }
 
-                    //var roundFirst = Math.round(signFirst * orderFirst +  ( epochFirst / 450000 ) );
-                    //var roundSecond = Math.round(signSecond * orderSecond + ( epochSecond / 450000 ) );
+                    
+                });
 
-                    if(roundFirst > roundSecond){
+                jsonNotizie = jsonNotizie.sort(function(first,second){
+                    
+                    if(first.round_score > second.round_score){
                         return -1
-                    }else if(roundFirst < roundSecond){
+                    }else if(first.round_score < second.round_score){
                         return 1;
                     }else{
                         return 0;
