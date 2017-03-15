@@ -69,19 +69,58 @@ exports.getNews = function(req, res) {
             })
 
             if(req.query.sort  && req.query.sort == "hot"){
+
+                if(req.query.longitude && req.query.latitude){
+
+                    var longitudeUser = req.query.longitude;
+                    var latitudeUser = req.query.latitude;
+
+                    jsonNotizie.map(function(value,index,arr){
+                        var distance = 0;
+
+                        var temp = {};
+                        value["aggiuntivi"].map(function(item){
+                            temp[item.tipo] = item.valore;
+                        });
+
+                        if(temp["LOCATION_LATITUDE"] && temp["LOCATION_LONGITUDE"]){
+                            var latitude = temp["LOCATION_LATITUDE"];
+                            var longitude = temp["LOCATION_LONGITUDE"];
+
+                            var start = {
+                                latitude : latitude,
+                                longitude : longitude
+                            };
+
+                            var end = {
+                                latitude : latitudeUser,
+                                longitude : longitudeUser
+                            };
+
+                            distance = haversine(start, end, {  unit: 'km'})
+                        }else{
+                            distance = 1000000;
+                        }
+
+                        jsonNotizie[index]["distance"] = distance;
+
+                    });
+
+                }
+
                 jsonNotizie = jsonNotizie.sort(function(first,second){
                     var dateFirst = Date.parse(first.created_at);
 
                     var dateSecond = Date.parse(second.created_at);
 
-                    var epochFirst = dateFirst;
-                    var epochSecond = dateSecond;
+                    var epochFirst = dateFirst / 1000;
+                    var epochSecond = dateSecond / 1000;
 
                     var scoreFirst = first.score;
                     var scoreSecond = second.score;
 
-                    var orderFirst = Math.log10(Math.max(Math.abs(scoreFirst),1));
-                    var orderSecond = Math.log10(Math.max(Math.abs(scoreSecond),1));
+                    var orderFirst =  Math.log10(Math.max(Math.abs(scoreFirst),1)) ;
+                    var orderSecond = Math.log10(Math.max(Math.abs(scoreSecond),1)) ;
 
                     var signFirst = 0;
                     var signSecond = 0;
@@ -97,9 +136,18 @@ exports.getNews = function(req, res) {
                     }else if(scoreSecond < 0){
                         signSecond = -1;
                     }
+                    
+                    if(req.query.longitude && req.query.latitude){
+                        var roundFirst = Math.round(45000 * signFirst * orderFirst +  ( epochFirst / ( 45000 * first.distance ) ) );
+                        var roundSecond = Math.round(45000 * signSecond * orderSecond + ( epochSecond / ( 45000 * second.distance ) ) );
 
-                    var roundFirst = Math.round(signFirst * orderFirst + epochFirst / 45000);
-                    var roundSecond = Math.round(signSecond * orderSecond + epochSecond / 45000);
+                    }else{
+                        var roundFirst = Math.round(signFirst * orderFirst +  ( epochFirst / 45000 ) );
+                        var roundSecond = Math.round(signSecond * orderSecond + ( epochSecond / 45000 ) );
+                    }
+
+                    //var roundFirst = Math.round(signFirst * orderFirst +  ( epochFirst / 450000 ) );
+                    //var roundSecond = Math.round(signSecond * orderSecond + ( epochSecond / 450000 ) );
 
                     if(roundFirst > roundSecond){
                         return -1
@@ -108,6 +156,8 @@ exports.getNews = function(req, res) {
                     }else{
                         return 0;
                     } 
+
+                    
                 });
             }else if(req.query.sort  && req.query.sort == "recent"){
                 jsonNotizie = jsonNotizie.sort(function(first,second){
@@ -414,7 +464,7 @@ exports.postNews = function(req, res) {
 
                 Promise.all(promises)
                 .then(function(result){
-                    notizia["aggiunte"] = aggiunteJson;
+                    notizia["aggiuntivi"] = aggiunteJson;
                     notizia["score"] = 0;
 
                     if(user.level == "EDITOR" || user.level == "MOD" || user.level == "ADMIN"){
@@ -425,7 +475,7 @@ exports.postNews = function(req, res) {
                         notifications.promoteNews(notizia.id);
                     }
 
-                    return res.send({error:false, data:notizia})
+                    return res.status(200).send({error:false, data:notizia})
 
                     
                 })

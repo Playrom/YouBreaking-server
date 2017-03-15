@@ -48,7 +48,7 @@ var sendNotificationChangeLevel = function(id,level,demoted){
 
             // Set expiration to 1 hour from now (in case device is offline)
             notification.expiry = Math.floor(Date.now() / 1000) + 3600;
-
+            notification.priority = 10;
             // Set app badge indicator
             //notification.badge = 0;
 
@@ -98,13 +98,18 @@ var pushToUsers = function(usersToPush,notizia){
 
             // Set app badge indicator
             //notification.badge = 0;
-
+            notification.priority = 10;
             // Play ping.aiff sound when the notification is received
             notification.sound = 'default';
 
             // Display the following message (the actual notification text, supports emoji)
             notification.title = notizia["title"];
-            notification.body = notizia["text"];
+
+            if(notizia["text"] != ""){
+                notification.body = notizia["text"];
+            }else{
+                notification.body = notizia["title"];
+            }
 
             // Send any extra payload data with the notification which will be accessible to your app in didReceiveRemoteNotification
             notification.payload = {type:"NEWS_NOTIFICATION" , data:notizia};
@@ -112,6 +117,7 @@ var pushToUsers = function(usersToPush,notizia){
             // Actually send the notification
             apnProvider.send(notification, tokens).then(function(result) {  
                 // Check the result for any failed devices
+                console.log(notification);
                 console.log(result);
             });
 
@@ -268,6 +274,8 @@ exports.promoteNews = function(idNews){
                                                 // Prepare a new notification
                                                 var notification = new apn.Notification();
 
+                                                notification.priority = 10;
+
                                                 // Specify your iOS app's Bundle ID (accessible within the project editor)
                                                 notification.topic = 'com.giorgioromano.news.youbreaking';
 
@@ -284,7 +292,7 @@ exports.promoteNews = function(idNews){
                                                 notification.title = "La tua notizia è stata pubblicata!";
                                                 notification.body = "La tua notizia con il titolo \"" + json.title + "\" è stata pubblicata";
 
-                                                notification.payload = {type:"NEWS_POSTED" , data : json};
+                                                //notification.payload = {type:"NEWS_POSTED" , data : json};
                                                 
                                                 // Actually send the notification
                                                 apnProvider.send(notification, tokens).then(function(result) {  
@@ -365,9 +373,6 @@ var notificateToVoters = function(notizia){
 var sendNotification = function(notizia,type){
     var json = notizia;
 
-    console.log(json);
-    console.log(type);
-
     if(type == "LOCAL"){
 
 
@@ -375,6 +380,11 @@ var sendNotification = function(notizia,type){
         json["aggiuntivi"].map(function(item){
             temp[item.tipo] = item.valore;
         });
+
+        var start = {
+            latitude : temp["LOCATION_LATITUDE"],
+            longitude : temp["LOCATION_LONGITUDE"]
+        }
 
         LocationUser.forge().fetchAll()
         .then(function(locations){
@@ -391,10 +401,6 @@ var sendNotification = function(notizia,type){
 
                     if(jsonLocations[i].distance){
                         if(haversine(start, end, { threshold : jsonLocations[i].distance, unit: 'km'}) ) { // Check if In Range
-                            usersToPush.push(jsonLocations[i].user_id);
-                        }
-                    }else{
-                        if(jsonLocations[i].country == temp["LOCATION_COUNTRY"]){
                             usersToPush.push(jsonLocations[i].user_id);
                         }
                     }

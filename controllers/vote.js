@@ -154,7 +154,7 @@ exports.postVote = function(req, res) {
                                 })
                                 .save()
                                 .then(function(vote){
-                                    News.forge({id:body.notizia_id}).fetch()
+                                    News.forge({id:body.notizia_id}).fetch({withRelated:['voti']})
                                     .then(function(news){
                                         if(news){
 
