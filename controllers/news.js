@@ -55,7 +55,7 @@ exports.getNews = function(req, res) {
 
     Data
     .orderBy('created_at', 'DESC')
-    .fetchAll({withRelated:['aggiuntivi','evento','voti']})
+    .fetchAll({withRelated:['aggiuntivi','evento','voti','user']})
     .then(function(notizie){
         if(notizie){
             var jsonNotizie = notizie.toJSON();
@@ -248,6 +248,9 @@ exports.getNews = function(req, res) {
             
 
             jsonNotizie.map(function(val,index,arr){
+                if(val["distance"] == 100){
+                    delete jsonNotizie[index]["distance"];
+                }
                 delete jsonNotizie[index]["voti"];
             });
 
@@ -296,7 +299,7 @@ exports.getSingleNews = function(req, res) {
     if(req.params.id){
         News
         .forge({id:req.params.id})
-        .fetch({withRelated:['aggiuntivi','voti']})
+        .fetch({withRelated:['aggiuntivi','voti','voti.user','user','evento']})
         .then(function(notizie){
 
             var json = notizie.toJSON();
@@ -306,7 +309,16 @@ exports.getSingleNews = function(req, res) {
                 score = score + utils.valoreVoto(val.voto);
             });
             json["score"] = score;
-            delete json.voti;
+
+            if(req.query.fields){
+                var fields = req.query.fields.split(',');
+                if(!fields.includes('voti')){
+                    delete json.voti;
+                }
+            }else{
+                delete json.voti;
+            }
+
 
             if(req.user){
                 var userId = req.user.id;
@@ -324,6 +336,7 @@ exports.getSingleNews = function(req, res) {
             }
         })
         .catch(function(err){
+            console.log(err);
             res.status(404).send({error:true, message:"Post Non Trovato"});
         });
     }

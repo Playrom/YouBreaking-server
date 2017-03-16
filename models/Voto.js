@@ -13,7 +13,7 @@ var Voto = bookshelf.Model.extend({
   notizia : function(){
     return this.belongsTo(News);
   },
-  utente : function(){
+  user : function(){
     return this.belongsTo('User');
   },
 

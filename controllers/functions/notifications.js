@@ -179,7 +179,7 @@ exports.changeLevel = function(id,oldLevel,newScore){
 
 exports.promoteNews = function(idNews){
 
-    var totalVoti = 1;
+    var totalVoti = 0;
     
     User
     .count()

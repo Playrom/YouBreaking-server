@@ -102,7 +102,7 @@ var User = bookshelf.Model.extend({
   },
 
   notizie: function(){
-    return this.hasMany(News);
+    return this.hasMany('News');
   },
 
   voti : function(){

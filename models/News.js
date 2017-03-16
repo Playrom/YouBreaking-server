@@ -13,7 +13,7 @@ var News = bookshelf.Model.extend({
   hasTimestamps: true,
 
   user: function(){
-    return this.hasOne(User);
+    return this.belongsTo('User','user_id');
   },
 
   evento: function () {

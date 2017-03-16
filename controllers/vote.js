@@ -25,7 +25,7 @@ exports.postVote = function(req, res) {
                 user_id : idUtente,
                 notizia_id : body.notizia_id
             })
-            .fetch({withRelated:['utente']})
+            .fetch({withRelated:['user']})
             .then(function(vote){
 
                 if(vote){
@@ -33,8 +33,8 @@ exports.postVote = function(req, res) {
                     var votoDaInserire = "UP";
 
                     if(body.voto){
-                        if( vote.toJSON().utente.level != "USER"){
-                            votoDaInserire = vote.toJSON().utente.level + "_" + body.voto;
+                        if( vote.toJSON().user.level != "USER"){
+                            votoDaInserire = vote.toJSON().user.level + "_" + body.voto;
                         }else{
                             votoDaInserire = body.voto;
                         }
@@ -63,7 +63,7 @@ exports.postVote = function(req, res) {
                                         }
                                     })
 
-                                    return res.status(200).send({error:false,message:"Voto Cancellato",data:data});
+                                    res.status(200).send({error:false,message:"Voto Cancellato",data:data});
 
                                 }
                             })
@@ -81,7 +81,6 @@ exports.postVote = function(req, res) {
                                 News.forge({id:body.notizia_id}).fetch({withRelated:['voti']})
                                 .then(function(news){
                                     if(news){
-
                                         var data = {
                                             voto: body.voto,
                                             score: news.toJSON().score
@@ -99,7 +98,7 @@ exports.postVote = function(req, res) {
                                             }
                                         })
 
-                                        return res.status(200).send({error:false,message:"Voto Sostituito",data:data});
+                                        res.status(200).send({error:false,message:"Voto Sostituito",data:data});
                                         
                                     }
                                 })
@@ -128,7 +127,7 @@ exports.postVote = function(req, res) {
                                     }
                                 })
 
-                                return res.status(200).send({error:false,message:"Voto Cancellato",data:data});
+                                res.status(200).send({error:false,message:"Voto Cancellato",data:data});
                                 
                             }
                         })
@@ -175,7 +174,7 @@ exports.postVote = function(req, res) {
                                                 }
                                             })
 
-                                            return res.status(200).send({error:false,message:"Voto Inserito",data:data});
+                                            res.status(200).send({error:false,message:"Voto Inserito",data:data});
 
                                             
                                         }
