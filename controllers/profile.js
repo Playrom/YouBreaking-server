@@ -18,7 +18,7 @@ exports.getUser = function(req, res) {
     if(req.params.id){
 
         var related = [];
-        if(req.query.field){
+        if(req.query.fields){
             related = req.query.field.split(",");
             if(related.includes('notizie')){
                 related.push('notizie.aggiuntivi');

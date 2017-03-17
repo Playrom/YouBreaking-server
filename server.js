@@ -166,9 +166,14 @@ if (process.env.PRODUCTION == "true") {
       cert: fs.readFileSync(sslPath + 'fullchain.pem')
   };
 
+  var httpServer = http.createServer(app);
+  httpServer.listen(80,function(){
+    console.log('HTTP Server listening on port ' + 80);
+  });
+
   var httpsServer = https.createServer(options, app);
   httpsServer.listen(443,function(){
-    console.log('Server listening on port ' + 433);
+    console.log('HTTPS Server listening on port ' + 433);
   });
 }
 
