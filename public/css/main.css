@@ -1,70 +1,73 @@
-html {
-  position: relative;
-  min-height: 100%;
+
+
+/* ==========================================================================
+   Author's custom styles
+   ========================================================================== */
+
+
+@import url('https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400');
+
+
+body{
+    background: #D62828;
 }
 
-body {
-  margin-bottom: 44px;
+p,a,h3{
+    color: #FFFFFC;
+    font-family: 'Source Sans Pro', sans-serif;
+    font-weight: 300;
 }
 
-ul, ol {
-  list-style: none;
+form{
+    padding: 0 !important;
 }
 
-footer {
-  position: absolute;
-  height: 44px;
-  bottom: 0;
-  padding: 0 30px;
+.main{
+    margin:75px auto;
 }
 
-label {
-  display: block;
-  line-height: 1.8;
+.main p{
+    font-size: 1.5em;
+    text-align: justify;
 }
 
-input[type="radio"] + label,
-input[type="checkbox"] + label {
-  display: inline-block;
-  margin: 0 5px;
+.iphone{
+    max-height: 600px;
+    max-width: 100%;
+    height: auto;
 }
 
-form button[type="submit"] {
-  margin-top: 1em;
+.logo{
+    max-width: 100%;
 }
 
-.list-inline {
-  display: inline-block;
-  padding-left: 0;
-  list-style: none;
+.download-row{
+    margin-top:20px;
 }
 
-.list-inline > li {
-  display: inline-block;
-  padding: 0 5px;
+.download-app-store{
+    max-width: 100%;
 }
 
-.container {
-  padding-right: 2rem;
-  padding-left: 2rem;
+footer,footer a{
+    text-decoration: none;
+    color: #FFFFFC !important;
 }
 
-.text-success {
-  color: #29b35b;
+footer p {
+    float: left;
+    position: relative;
 }
 
-.text-danger {
-  color: #b61b17;
+footer .right{
+    float: right;
+    position: relative
 }
 
-.text-info {
-  color: #31708f;
+#mc_embed_signup{
+    background: none !important;
 }
 
-.avatar {
-  margin-right: 5px;
-  border-radius: 50%;
-  width: 30px;
-  height: 30px;
-  vertical-align: middle;
-}
+
+
+
