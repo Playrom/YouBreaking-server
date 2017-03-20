@@ -81,8 +81,21 @@ app.use(express.static(path.join(__dirname, 'public')));
 // app.get('/logout', userController.logout);
 // app.get('/unlink/:provider', userController.ensureAuthenticated, userController.unlink);
 
+app.get("/auth/facebook/token", function(req, res, next){
+    req.url = "/api/auth/facebook/token";
+    next();
+});
+app.get("/auth/facebook", function(req, res, next){
+    req.url = "/api/auth/facebook";
+    next();
+});
+app.get("/auth/facebook/callback", function(req, res, next){
+    req.url = "/api/auth/facebook/callback";
+    next();
+});
+
 app.get(
-    "/auth/facebook/token",
+    "/api/auth/facebook/token",
     (req, res) => {
       passport.authenticate('facebook-token', function (err, token, info) {
             if(err == null){
@@ -93,8 +106,8 @@ app.get(
       })(req, res);
     }
 );
-app.get('/auth/facebook', passport.authenticate('facebook', { scope: ['email', 'user_location'] }));
-app.get('/auth/facebook/callback', passport.authenticate('facebook', { successRedirect: '/', failureRedirect: '/login' }));
+app.get('/api/auth/facebook', passport.authenticate('facebook', { scope: ['email', 'user_location'] }));
+app.get('/api/auth/facebook/callback', passport.authenticate('facebook', { successRedirect: '/', failureRedirect: '/login' }));
 app.get(
   '/api/auth/check', 
   (req, res) => {

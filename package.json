@@ -1,7 +1,7 @@
 {
-  "name": "dark-term",
-  "version": "1.0.0",
-  "description": "My app description",
+  "name": "You Breaking Server",
+  "version": "1.0.1",
+  "description": "",
   "scripts": {
     "start": "node server.js"
   },
