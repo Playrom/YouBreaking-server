@@ -53,6 +53,25 @@ exports.getNews = function(req, res) {
     var startLimit = (pageSize * ( page - 1) );
     var endLimit = (pageSize * page ) ;
 
+    if(req.query.startDate || req.query.endDate){
+        if(req.query.startDate){
+            var date = new Date(req.query.startDate*1000);
+            var mysqlDate = date.toISOString().slice(0, 19).replace('T', ' ');
+            Data = Data.where('created_at', '>', mysqlDate);
+        }
+        if(req.query.endDate){
+            var date = new Date(req.query.endDate*1000);
+            var mysqlDate = date.toISOString().slice(0, 19).replace('T', ' ');
+            Data = Data.where('created_at', '<', mysqlDate);
+        }
+    }else{
+        var now = new Date();
+        var date = now;
+        date.setDate(date.getDate()-4);
+        var mysqlDate = date.toISOString().slice(0, 19).replace('T', ' ');
+        Data = Data.where('created_at', '>', mysqlDate);
+    }
+
     Data
     .orderBy('created_at', 'DESC')
     .fetchAll({withRelated:['aggiuntivi','evento','voti','user']})
