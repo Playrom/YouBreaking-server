@@ -65,11 +65,13 @@ exports.getNews = function(req, res) {
             Data = Data.where('created_at', '<', mysqlDate);
         }
     }else{
-        var now = new Date();
-        var date = now;
-        date.setDate(date.getDate()-4);
-        var mysqlDate = date.toISOString().slice(0, 19).replace('T', ' ');
-        Data = Data.where('created_at', '>', mysqlDate);
+        if(req.query.dateLimit){
+            var now = new Date();
+            var date = now;
+            date.setDate(date.getDate()-4);
+            var mysqlDate = date.toISOString().slice(0, 19).replace('T', ' ');
+            Data = Data.where('created_at', '>', mysqlDate);
+        }    
     }
 
     Data
