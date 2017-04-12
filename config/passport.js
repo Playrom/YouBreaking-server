@@ -127,9 +127,6 @@ passport.use(new FacebookTokenStrategy({
           .fetch()
           .then(function(user) {
 
-            console.log("User Fetched From Profile Facebook");
-            console.log(user);
-
             if (user) { // Se l'utente esiste già allora non devo creare nulla, solo generare il Token JWT
 
               var oldToken = extractor(req);
@@ -168,7 +165,7 @@ passport.use(new FacebookTokenStrategy({
                     }
 
                     var t = new Date();
-                    t.setSeconds(t.getSeconds() + (60*60*24*7)); // Sette Giorni
+                    t.setSeconds(t.getSeconds() + (60*60*24*28)); // Sette Giorni
                     var exp = t.toISOString().slice(0, 19).replace('T', ' ');
 
                     new Token({token : token , user_id : user.toJSON().id, exp : exp}).save().then(function(token){
@@ -220,7 +217,7 @@ passport.use(new FacebookTokenStrategy({
                       }
 
                       var t = new Date();
-                      t.setSeconds(t.getSeconds() + (60*60*24*7)); // Sette Giorni
+                      t.setSeconds(t.getSeconds() + (60*60*24*28)); // Sette Giorni
                       var exp = t.toISOString().slice(0, 19).replace('T', ' ');
 
                       new Token({token : token , user_id : user.toJSON().id , exp:exp}).save().then(function(token){
@@ -242,6 +239,8 @@ passport.use(new FacebookTokenStrategy({
         
 
 
+      }else{
+        done(error,null);
       }
     })
 

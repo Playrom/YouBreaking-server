@@ -446,32 +446,83 @@ exports.postNews = function(req, res) {
                 for(var i = 0; i < agg.length ; i++){
                     var single = agg[i];
 
-                    if(single.tipo == "PHOTO"){
+                    if(single.tipo == "PHOTO" || single.tipo == "FEATURED_PHOTO"){
 
                         var img = single.valore;
                         var buf = new Buffer(img, 'base64');
 
-
                         promises.push(
                             Aggiunte
-                            .forge({notizia_id : notizia.id})
+                            .forge({notizia_id : notizia.id, tipo: single.tipo})
                             .save()
                             .then(function(aggiunta){
                                 if(aggiunta){
                                     var idPhoto = aggiunta.id;
+                                    var photoPath = null;
+                                    // Save base64 image to disk
+                                    try{
+                                        // Decoding base-64 image
+                                        // Source: http://stackoverflow.com/questions/20267939/nodejs-write-base64-image-file
+                                        function decodeBase64Image(dataString){
+                                            var matches = dataString.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+                                            var response = {};
 
-                                    fs.writeFileSync(path.join(__dirname, '../public/photos/' , idPhoto + ".jpeg"), buf, function(err) {
-                                        if (err) throw err;
+                                            if (matches.length !== 3){
+                                                return new Error('Invalid input string');
+                                            }
+
+                                            response.type = matches[1];
+                                            response.data = new Buffer(matches[2], 'base64');
+
+                                            return response;
+                                        }
+
+                                        // Regular expression for image type:
+                                        // This regular image extracts the "jpeg" from "image/jpeg"
+                                        var imageTypeRegularExpression      = /\/(.*?)$/;      
+
+                                        var base64Data = img;
+
+                                        var imageBuffer                      = decodeBase64Image(base64Data);
+                                        var userUploadedFeedMessagesLocation = path.join(__dirname, '../public/photos/')
+
+                                        var uniqueRandomImageName            =  idPhoto;
+                                        // This variable is actually an array which has 5 values,
+                                        // The [1] value is the real image extension
+                                        var imageTypeDetected                = imageBuffer
+                                                                                .type
+                                                                                .match(imageTypeRegularExpression);
+
+                                        var userUploadedImagePath            = userUploadedFeedMessagesLocation + 
+                                                                            uniqueRandomImageName +
+                                                                            '.' + 
+                                                                            imageTypeDetected[1];
+
+                                        photoPath =  uniqueRandomImageName + '.' + imageTypeDetected[1];
+
+                                        // Save decoded binary image to disk
+                                        try{
+                                            require('fs').writeFile(userUploadedImagePath, imageBuffer.data, function(){
+                                                console.log('DEBUG - feed:message: Saved to disk image attached by user:', userUploadedImagePath);
+                                            });
+                                        }catch(error) {
+                                            console.log('ERROR:', error);
+                                        }
+
+                                    }catch(error){
+                                        photoPath = idPhoto + ".jpeg";
+                                        fs.writeFileSync(path.join(__dirname, '../public/photos/' , idPhoto + ".jpeg"), buf, function(err) {
+                                            if (err) throw err;
                                             console.log("Wrote sitemap to XML");
-                                    });
+                                        });
+                                    }
                                     
                                     var singleJson = aggiunta.toJSON();
-                                    singleJson["tipo"] = "PHOTO";
-                                    singleJson["valore"] = idPhoto + ".jpeg";
+                                    singleJson["valore"] = photoPath;
 
                                     aggiunteJson.push(singleJson);
 
-                                    aggiunta.save({tipo : "PHOTO", valore : idPhoto + ".jpeg"}).then(function(saved){
+                                    aggiunta.save({tipo : singleJson.tipo, valore : photoPath}).then(function(saved){
 
                                     })
 
@@ -514,7 +565,7 @@ exports.postNews = function(req, res) {
                 })
 
             }else{
-                return res.send({error:false, data:notizie.toJSON()})
+                return res.send({error:false, data:notizia})
             }
         })
         .catch(function(err){

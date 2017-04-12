@@ -47,6 +47,8 @@ exports.passUser = function(req, res, next){
     passport.authenticate('jwt', { session: false}, function(err, user, info) {
         if(user){
             req.user = user;
+        }else{
+
         }
         next();
     })(req, res, next);

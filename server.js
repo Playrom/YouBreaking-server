@@ -60,6 +60,15 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(function(req, res, next) {
   res.locals.user = req.user ? req.user.toJSON() : null;
+
+  res.setHeader('Access-Control-Allow-Origin', '*');
+
+  // Request methods you wish to allow
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+
+  // Request headers you wish to allow
+  res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type,Authorization');
+
   next();
 });
 app.use(express.static(path.join(__dirname, 'public')));
