@@ -4,6 +4,8 @@ var bookshelf = require('../config/bookshelf');
 
 var News = require('./News');
 
+var config = require('../config');
+
 var Aggiunte = bookshelf.Model.extend({
   tableName: 'aggiuntivi',
   uuid: true,
@@ -13,7 +15,15 @@ var Aggiunte = bookshelf.Model.extend({
     return this.belongsTo('News','notizia_id');
   },
 
-      hidden: ['created_at', 'updated_at'],
+  virtuals: {
+    url : function(){
+      if(this.get('tipo').includes('PHOTO')){
+        return config.URL + "/photos/" + this.get('valore');
+      }
+    }
+  },
+
+  hidden: ['created_at', 'updated_at'],
 
 });
 

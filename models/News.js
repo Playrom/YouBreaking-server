@@ -7,6 +7,8 @@ var Aggiunte = require('./Aggiunte');
 var Voto = require('./Voto');
 var Evento = require('./Evento');
 
+var config = require('../config');
+
 var News = bookshelf.Model.extend({
   tableName: 'notizie',
   uuid: true,
@@ -76,6 +78,18 @@ var News = bookshelf.Model.extend({
         }
       }
       return score;
+    },
+    featured_photo : function(){
+      var aggiuntivi = this.related('aggiuntivi').toJSON();
+      var featured_photo = null
+      aggiuntivi.map(function(item){
+        if(item.tipo == "FEATURED_PHOTO"){featured_photo =  item.valore;}
+      })
+      return config.URL + "/photos/" + featured_photo;
+    },
+
+    news_url : function(){
+      return config.URL + "/news/" + this.id;
     }
   },
 
