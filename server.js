@@ -167,8 +167,8 @@ var http = require('http');
 if (process.env.PRODUCTION == "false"){
   
   var httpServer = http.createServer(app);
-  httpServer.listen(80,function(){
-    console.log('Server listening on port ' + 80);
+  httpServer.listen(5000,function(){
+    console.log('Server listening on port ' + 5000);
   });
 }
 
@@ -179,24 +179,11 @@ if (process.env.PRODUCTION == "true") {
     res.sendStatus(err.status || 500);
   });
 
-  var fs = require('fs');
-  var https = require('https');
-  var sslPath = process.env.SSLPATH;
-
-  var options = {  
-      key: fs.readFileSync(sslPath + 'privkey.pem'),
-      cert: fs.readFileSync(sslPath + 'fullchain.pem')
-  };
-
   var httpServer = http.createServer(app);
-  httpServer.listen(80,function(){
-    console.log('HTTP Server listening on port ' + 80);
+  httpServer.listen(5000,function(){
+    console.log('HTTP Server listening on port ' + 5000);
   });
 
-  var httpsServer = https.createServer(options, app);
-  httpsServer.listen(443,function(){
-    console.log('HTTPS Server listening on port ' + 433);
-  });
 }
 
 
