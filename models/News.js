@@ -1,6 +1,8 @@
 var crypto = require('crypto');
 var bcrypt = require('bcrypt-nodejs');
 var bookshelf = require('../config/bookshelf');
+var path = require('path');
+var fs = require('fs');
 
 var User = require('./User');
 var Aggiunte = require('./Aggiunte');
@@ -85,7 +87,27 @@ var News = bookshelf.Model.extend({
       aggiuntivi.map(function(item){
         if(item.tipo == "FEATURED_PHOTO"){featured_photo =  item.valore;}
       })
-      return config.URL + "/photos/" + featured_photo;
+      if(featured_photo){
+        var dirPath = path.join(__dirname, '../public/photos/')
+
+        var fileName = featured_photo;
+        if(fileName){
+          var imageType = path.extname(fileName);
+          var imageName = path.basename(fileName,imageType);
+
+          var baseUrl = config.URL + "/photos/" + imageName + "-";
+          var filePath = dirPath + imageName + "-";
+          var urls = {
+            small : fs.existsSync(filePath + "small" + imageType) ? baseUrl + "small" + imageType : null,
+            medium : fs.existsSync(filePath + "medium" + imageType) ? baseUrl + "medium" + imageType : null,
+            large : fs.existsSync(filePath + "large" + imageType) ? baseUrl + "large" + imageType : null,
+            thumb : fs.existsSync(filePath + "thumb" + imageType) ? baseUrl + "thumb" + imageType : null,
+            original : config.URL + "/photos/" + featured_photo
+          }
+          
+          return urls;
+        }
+      }
     },
 
     news_url : function(){

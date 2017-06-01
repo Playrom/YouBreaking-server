@@ -1,5 +1,6 @@
 var fs = require('fs');
 var path = require('path');
+var sharp = require('sharp');
 
 var Promise = require("bluebird");
 const haversine = require('haversine')
@@ -483,28 +484,53 @@ exports.postNews = function(req, res) {
 
                                         var base64Data = img;
 
-                                        var imageBuffer                      = decodeBase64Image(base64Data);
-                                        var userUploadedFeedMessagesLocation = path.join(__dirname, '../public/photos/')
+                                        var imageBuffer = decodeBase64Image(base64Data);
+                                        var dirPath = path.join(__dirname, '../public/photos/')
 
-                                        var uniqueRandomImageName            =  idPhoto;
-                                        // This variable is actually an array which has 5 values,
-                                        // The [1] value is the real image extension
-                                        var imageTypeDetected                = imageBuffer
-                                                                                .type
-                                                                                .match(imageTypeRegularExpression);
+                                        var imageName =  idPhoto; // NAME
 
-                                        var userUploadedImagePath            = userUploadedFeedMessagesLocation + 
-                                                                            uniqueRandomImageName +
-                                                                            '.' + 
-                                                                            imageTypeDetected[1];
+                                        var imageTypeDetected = imageBuffer.type.match(imageTypeRegularExpression);
+                                        var imageType = imageTypeDetected[1];
 
-                                        photoPath =  uniqueRandomImageName + '.' + imageTypeDetected[1];
+                                        var small = imageName + "-small" + '.' + 'jpeg';
+                                        var medium = imageName + "-medium" + '.' + 'jpeg';
+                                        var large = imageName + "-large" + '.' + 'jpeg';
+                                        var thumb = imageName + "-thumb" + '.' + 'jpeg';
+
+                                        var originalPath = dirPath + imageName + '.' +  imageType;
+                                        var smallPath = dirPath + small;
+                                        var mediumPath = dirPath + medium;
+                                        var largePath = dirPath + large;
+                                        var thumbPath = dirPath + thumb;
+
+                                        photoPath =  imageName + '.' + imageType;
 
                                         // Save decoded binary image to disk
                                         try{
-                                            require('fs').writeFile(userUploadedImagePath, imageBuffer.data, function(){
-                                                console.log('DEBUG - feed:message: Saved to disk image attached by user:', userUploadedImagePath);
+                                            require('fs').writeFile(originalPath, imageBuffer.data, function(){
+                                                console.log('DEBUG - feed:message: Saved to disk image attached by user:', originalPath);
                                             });
+
+                                            sharp(imageBuffer.data)
+                                            .resize(300)
+                                            .jpeg({quality:100})
+                                            .toFile(smallPath, function(err) {});
+
+                                            sharp(imageBuffer.data)
+                                            .resize(600)
+                                            .jpeg({quality:100})
+                                            .toFile(mediumPath, function(err) {});
+                                            
+                                            sharp(imageBuffer.data)
+                                            .resize(1200)
+                                            .jpeg({quality:100})
+                                            .toFile(largePath, function(err) {console.log(err);});
+
+                                            sharp(imageBuffer.data)
+                                            .resize(1200,400)
+                                            .jpeg({quality:100})
+                                            .crop()
+                                            .toFile(thumbPath, function(err) {});
                                         }catch(error) {
                                             console.log('ERROR:', error);
                                         }
