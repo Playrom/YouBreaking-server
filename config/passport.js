@@ -272,7 +272,7 @@ passport.use(new JwtStrategy(opts, function(req,jwt_payload, done) {
           }else{
 
             new User({ id: jwt_payload.id })
-            .fetch({withRelated : ['location']})
+            .fetch()
             .then(function(user,err) {
               if (err) {
                   return done(err, false);

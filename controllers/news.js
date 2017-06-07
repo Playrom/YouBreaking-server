@@ -1,16 +1,15 @@
 var fs = require('fs');
 var path = require('path');
-var sharp = require('sharp');
 
 var Promise = require("bluebird");
 const haversine = require('haversine')
 var notifications = require('./functions/notifications');
 var utils = require('./functions/utils');
 
+var Like = require('../models/Like');
 var User = require('../models/User');
 var Token = require('../models/Token');
 var News = require('../models/News');
-var Voto = require('../models/Voto');
 var Aggiunte = require('../models/Aggiunte');
 var LocationUser = require('../models/LocationUser');
 var NotificationToken = require('../models/NotificationToken');
@@ -19,7 +18,6 @@ var NotificationToken = require('../models/NotificationToken');
 exports.getNews = function(req, res) {
 
     var live = 1;
-
     var Data = News.forge();
 
     if(req.query.live){
@@ -75,112 +73,21 @@ exports.getNews = function(req, res) {
         }    
     }
 
+
+    Data = Data
+    .orderBy('created_at', 'DESC');
+    if(req.user){
+        Data = Data.fetchAll({withRelated:['aggiuntivi' , { userLike: qb => qb.where({user_id : req.user.id}).as("userLiked")}]})
+    }else{
+        Data = Data.fetchAll({withRelated:['aggiuntivi']})
+    }
+
     Data
-    .orderBy('created_at', 'DESC')
-    .fetchAll({withRelated:['aggiuntivi','evento','voti','user']})
     .then(function(notizie){
         if(notizie){
-            var jsonNotizie = notizie.toJSON();
-
-            jsonNotizie.map(function(value,index,arr){
-                var score = 0;
-                value['voti'].map(function(val,i,a){
-                    score = score + utils.valoreVoto(val.voto);
-                });
-                jsonNotizie[index]["score"] = score;
-            })
-
-            if(req.query.sort  && req.query.sort == "hot"){
-
-                if(req.query.longitude && req.query.latitude){
-
-                    var longitudeUser = req.query.longitude;
-                    var latitudeUser = req.query.latitude;
-
-                    jsonNotizie.map(function(value,index,arr){
-                        var distance = 0;
-
-                        var temp = {};
-                        value["aggiuntivi"].map(function(item){
-                            temp[item.tipo] = item.valore;
-                        });
-
-                        if(temp["LOCATION_LATITUDE"] && temp["LOCATION_LONGITUDE"]){
-                            var latitude = temp["LOCATION_LATITUDE"];
-                            var longitude = temp["LOCATION_LONGITUDE"];
-
-                            var start = {
-                                latitude : latitude,
-                                longitude : longitude
-                            };
-
-                            var end = {
-                                latitude : latitudeUser,
-                                longitude : longitudeUser
-                            };
-
-                            distance = haversine(start, end, {  unit: 'km'})
-                        }else{
-                            distance = 100;
-                        }
-
-                        jsonNotizie[index]["distance"] = distance;
-
-                    });
-
-                }
-
-                jsonNotizie = jsonNotizie.map(function(first,index,arr){
-                    var dateFirst = Date.parse(first.created_at);
-
-                    var epochFirst = dateFirst / 1000;
-
-                    var scoreFirst = first.score;
-
-                    var orderFirst =  Math.log10(Math.max(Math.abs(scoreFirst),1)) ;
-
-                    var signFirst = 0;
-
-                    if(scoreFirst > 0){
-                        signFirst = 1;
-                    }else if(scoreFirst < 0){
-                        signFirst = -1;
-                    }
-                    
-                    if(req.query.longitude && req.query.latitude){
-
-                        if(first.distance < 1){
-                            first.distance = 1;
-                        }
-
-                        var roundFirst =  ( signFirst * orderFirst / Math.log10(1 + first.distance) +  ( epochFirst /  45000   ) ) ;
-                        first.round_score = roundFirst;
-                        //console.log(first.title + ": " + roundFirst);
-                        return first;
-
-                    }else{
-                        var roundFirst = Math.round(signFirst * orderFirst +  ( epochFirst / 45000 ) );
-                        first.round_score = roundFirst;
-                        //console.log(first.title + ": " + roundFirst);
-                        return first;
-                    }
-
-                    
-                });
-
-                jsonNotizie = jsonNotizie.sort(function(first,second){
-                    
-                    if(first.round_score > second.round_score){
-                        return -1
-                    }else if(first.round_score < second.round_score){
-                        return 1;
-                    }else{
-                        return 0;
-                    } 
-
-                    
-                });
-            }else if(req.query.sort  && req.query.sort == "recent"){
+            var jsonNotizie = notizie.toJSON({essential:true});
+            
+            if(req.query.sort  && req.query.sort == "recent"){
                 jsonNotizie = jsonNotizie.sort(function(first,second){
                     var dateFirst = Date.parse(first.created_at);
 
@@ -241,26 +148,6 @@ exports.getNews = function(req, res) {
                         return 0;
                     }
                 });
-            }else if(req.query.sort && req.query.sort == "score"){
-                jsonNotizie = jsonNotizie.sort(function(first,second){
-                    if(first.score > second.score){
-                        return -1
-                    }else if(first.score < second.score){
-                        return 1;
-                    }else{
-                        return 0;
-                    }
-                });
-            }else{
-                jsonNotizie = jsonNotizie.sort(function(first,second){
-                    if(first.score > second.score){
-                        return -1
-                    }else if(first.score < second.score){
-                        return 1;
-                    }else{
-                        return 0;
-                    }
-                });
             }
 
             total = jsonNotizie.length;
@@ -273,40 +160,12 @@ exports.getNews = function(req, res) {
                 if(val["distance"] == 100){
                     delete jsonNotizie[index]["distance"];
                 }
-                delete jsonNotizie[index]["voti"];
+                delete jsonNotizie[index]["aggiuntivi"];
             });
-
-            var jsonVoti = {};
+            
 
             if(req.user){
-
-                var promises = [];
-
-                for(var i = 0; i < jsonNotizie.length ; i++){
-                    var single = jsonNotizie[i];
-                    promises.push(
-                        Voto
-                        .forge({user_id : req.user.id,notizia_id : single.id})
-                        .fetch()
-                        .then(function(voto){
-                            if(voto){
-                                var news_id = voto.get('notizia_id');
-                                jsonVoti[news_id] = voto.toJSON();
-                            }
-                        })
-                    );
-                }
-
-                Promise.all(promises)
-                .then(function(result){
-                    for(var i = 0; i < jsonNotizie.length ; i++){
-                        var temp = jsonNotizie[i];
-                        var voto = jsonVoti[temp.id];
-                        jsonNotizie[i]["voto_utente"] = voto;
-                    }
-                    res.send({error:false, data:jsonNotizie, pagination:{page:page,pageSize : pageSize, pages : pages, total:total} })
-                })
-
+                res.send({error:false, data:jsonNotizie, pagination:{page:page,pageSize : pageSize, pages : pages, total:total} })
             }else{
                 res.send({error:false, data:jsonNotizie , pagination:{page:page,pageSize : pageSize, pages : pages, total:total} })
             }
@@ -321,37 +180,29 @@ exports.getSingleNews = function(req, res) {
     if(req.params.id){
         News
         .forge({id:req.params.id})
-        .fetch({withRelated:['aggiuntivi','voti','voti.user','user','evento']})
+        .fetch({withRelated:['aggiuntivi','user','evento']})
         .then(function(notizie){
 
             var json = notizie.toJSON();
 
-            var score = 1;
-            json['voti'].map(function(val,i,a){
-                score = score + utils.valoreVoto(val.voto);
-            });
-            json["score"] = score;
-
             if(req.query.fields){
                 var fields = req.query.fields.split(',');
-                if(!fields.includes('voti')){
-                    delete json.voti;
-                }
-            }else{
-                delete json.voti;
             }
 
-
             if(req.user){
-                var userId = req.user.id;
-                Voto
-                .forge({user_id : userId,notizia_id : json.id})
+                Like
+                .forge()
+                .where('notizia_id' , req.params.id)
+                .where('user_id',req.user.id)
                 .fetch()
-                .then(function(voto){
-                    if(voto){
-                        json["voto_utente"] = voto.toJSON();
+                .then(function(like){
+                    if(like){
+                        json["liked"] = true;
+                        res.send({error:false,data: json});
+                    }else{
+                        json["liked"] = false;
+                        res.send({error:false,data : json});
                     }
-                    res.send({error:false,data : json});
                 })
             }else{
                 res.send({error:false, data:json})
@@ -361,6 +212,36 @@ exports.getSingleNews = function(req, res) {
             console.log(err);
             res.status(404).send({error:true, message:"Post Non Trovato"});
         });
+    }
+};
+
+exports.getSingleNewsLikes = function(req, res) {
+
+    if(req.params.id){
+        News
+        .forge({id:req.params.id})
+        .fetch()
+        .then(function(notizia){
+            if(notizia){
+                Like
+                .forge()
+                .where('notizia_id' , req.params.id)
+                .fetchAll()
+                .then(function(likes){
+                    if(likes){
+                        res.send({error:false,data : likes.toJSON()});
+                    }else{
+                        res.send({error:false,data : []});
+                    }
+                })
+            }
+
+        })
+        .catch(function(err){
+            res.status(404).send({error:true, message:"Post Non Trovato"});
+        });
+    }else{
+        res.status(400).send({error:true, message:"Non sei autorizzato ad usare questo endpoint"});
     }
 };
 
@@ -575,15 +456,14 @@ exports.postNews = function(req, res) {
                 Promise.all(promises)
                 .then(function(result){
                     notizia["aggiuntivi"] = aggiunteJson;
-                    notizia["score"] = 0;
-
+                    /*
                     if(user.level == "EDITOR" || user.level == "MOD" || user.level == "ADMIN"){
                         if(req.body.notification == "GLOBAL" || req.body.notification == "LOCAL" ){
                             notifications.sendNotification(notizia,req.body.notification);
                         }
                     }else{
                         notifications.promoteNews(notizia.id);
-                    }
+                    }*/
 
                     return res.status(200).send({error:false, data:notizia})
 

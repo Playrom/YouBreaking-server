@@ -8,7 +8,6 @@ var ExtractJwt = require('passport-jwt').ExtractJwt;
 var User = require('../models/User');
 var Token = require('../models/Token');
 var News = require('../models/News');
-var Voto = require('../models/Voto');
 var Aggiunte = require('../models/Aggiunte');
 var Evento = require('../models/Evento');
 
@@ -31,49 +30,7 @@ exports.getEvents = function(req, res) {
         .fetchAll({withRelated : related})
         .then(function(eventi){
             if(eventi){
-                var jsonEventi = eventi.toJSON();
-                var jsonVoti = {};
-
-                if(req.user && related.includes('notizie')){
-
-                    var promises = [];
-
-                    for(var i = 0; i < jsonEventi.length ; i++){
-                        var singleEvent = jsonEventi[i]['notizie'];
-
-                        for(var k = 0; k < singleEvent.length ; k++){
-                            var singleNotizia = singleEvent[k];
-
-                            promises.push(
-                                Voto
-                                .forge({user_id : req.user.id,notizia_id : singleNotizia.id})
-                                .fetch()
-                                .then(function(voto){
-                                    if(voto){
-                                        var news_id = voto.get('notizia_id');
-                                        jsonVoti[news_id] = voto.toJSON();
-                                    }
-                                })
-                            );
-
-                        }
-                    }
-
-                    Promise.all(promises)
-                    .then(function(result){
-                        for(var i = 0; i < jsonEventi.length ; i++){
-                            for(var k = 0; k < jsonEventi[i]['notizie'].length ; k++){
-                                var singleNotizia = jsonEventi[i]['notizie'][k];
-                                var voto = jsonVoti[singleNotizia.id];
-                                jsonEventi[i]['notizie'][k]["voto_utente"] = voto;
-                            }
-                        }
-                        res.send({error:false, data:jsonEventi})
-                    })
-
-                }else{
-                    res.send({error:false, data:eventi.toJSON()})
-                }
+                res.send({error:false, data:eventi.toJSON()})
             }else{
                 res.send({error:false, data:[]})
             }
@@ -86,49 +43,7 @@ exports.getEvents = function(req, res) {
         .fetchAll({withRelated : related})
         .then(function(eventi){
             if(eventi){
-                var jsonEventi = eventi.toJSON();
-                var jsonVoti = {};
-
-                if(req.user && related.includes('notizie')){
-
-                    var promises = [];
-
-                    for(var i = 0; i < jsonEventi.length ; i++){
-                        var singleEvent = jsonEventi[i]['notizie'];
-
-                        for(var k = 0; k < singleEvent.length ; k++){
-                            var singleNotizia = singleEvent[k];
-
-                            promises.push(
-                                Voto
-                                .forge({user_id : req.user.id,notizia_id : singleNotizia.id})
-                                .fetch()
-                                .then(function(voto){
-                                    if(voto){
-                                        var news_id = voto.get('notizia_id');
-                                        jsonVoti[news_id] = voto.toJSON();
-                                    }
-                                })
-                            );
-
-                        }
-                    }
-
-                    Promise.all(promises)
-                    .then(function(result){
-                        for(var i = 0; i < jsonEventi.length ; i++){
-                            for(var k = 0; k < jsonEventi[i]['notizie'].length ; k++){
-                                var singleNotizia = jsonEventi[i]['notizie'][k];
-                                var voto = jsonVoti[singleNotizia.id];
-                                jsonEventi[i]['notizie'][k]["voto_utente"] = voto;
-                            }
-                        }
-                        res.send({error:false, data:jsonEventi})
-                    })
-
-                }else{
-                    res.send({error:false, data:eventi.toJSON()})
-                }
+                res.send({error:false, data:eventi.toJSON()})
             }else{
                 res.send({error:false, data:[]})
             }

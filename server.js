@@ -22,7 +22,7 @@ var profileController = require('./controllers/profile');
 var newsController = require('./controllers/news');
 var eventsController = require('./controllers/events');
 var auth = require('./controllers/authenticate');
-var voteController = require('./controllers/vote');
+var likeController = require('./controllers/like');
 
 // Passport OAuth strategies
 require('./config/passport');
@@ -48,6 +48,7 @@ var hbs = exphbs.create({
 app.engine('handlebars', hbs.engine);
 app.set('view engine', 'handlebars');
 app.set('port', process.env.PORT || 3000);
+app.set('json spaces', 4);
 app.use(compression());
 app.use(logger('dev'));
 app.use(bodyParser.json({limit: '20mb' , extended: true }));
@@ -132,27 +133,28 @@ app.get(
         })(req, res);
   }
 );
-app.post('/api/auth/logout', auth.authenticate, profileController.logout);
-app.get('/api/profile', passport.authenticate('jwt', { session: false}), profileController.getProfile);
-app.put('/api/profile/:id', auth.authOrAdmin, profileController.editProfile);
-app.post('/api/profile/location', auth.authenticate, profileController.userLocation);
-app.delete('/api/profile/location', auth.authenticate, profileController.deleteUserLocation);
-app.put('/api/profile/location/distance', auth.authenticate, profileController.userLocationDistance);
-app.post('/api/register/ios', auth.authenticate, profileController.locationNotification);
+app.post('/api/auth/logout', auth.config, auth.authenticate, profileController.logout);
+app.get('/api/profile', auth.config, passport.authenticate('jwt', { session: false}), profileController.getProfile);
+app.put('/api/profile/:id', auth.config, auth.authOrAdmin, profileController.editProfile);
+app.post('/api/profile/location', auth.config, auth.authenticate, profileController.userLocation);
+app.delete('/api/profile/location', auth.config, auth.authenticate, profileController.deleteUserLocation);
+app.put('/api/profile/location/distance', auth.config, auth.authenticate, profileController.userLocationDistance);
+app.post('/api/register/ios', auth.config, auth.authenticate, profileController.locationNotification);
 
-app.put('/api/news/promote/:id', auth.modOrAdmin, newsController.promote);
-app.get('/api/news/:id', auth.passUser, newsController.getSingleNews);
-app.delete('/api/news/:id', auth.authenticate, newsController.delete);
-app.get('/api/news', auth.passUser, newsController.getNews);
-app.post('/api/news', auth.authenticate, newsController.postNews);
-app.post('/api/vote', auth.authenticate, voteController.postVote);
-app.get('/api/vote', auth.authenticate, voteController.getWaitVotesUser);
+app.put('/api/news/promote/:id', auth.config, auth.modOrAdmin, newsController.promote);
+app.get('/api/news/:id', auth.config, auth.passUser, newsController.getSingleNews);
+app.get('/api/news/:id/likes', auth.config, auth.passUser, newsController.getSingleNewsLikes);
+app.delete('/api/news/:id', auth.config, auth.authenticate, newsController.delete);
+app.get('/api/news', auth.config, auth.passUser, newsController.getNews);
+app.post('/api/news', auth.config, auth.authenticate, newsController.postNews);
+app.post('/api/likes', auth.config, auth.authenticate, likeController.postLike);
+app.delete('/api/likes', auth.config, auth.authenticate, likeController.deleteLike);
 
-app.get('/api/events/:id', auth.passUser, eventsController.getSingleEvent);
-app.get('/api/events', auth.passUser, eventsController.getEvents);
-app.post('/api/events', auth.authenticate, eventsController.postEvent);
+app.get('/api/events/:id', auth.config, auth.passUser, eventsController.getSingleEvent);
+app.get('/api/events', auth.config, auth.passUser, eventsController.getEvents);
+app.post('/api/events', auth.config, auth.authenticate, eventsController.postEvent);
 
-app.get('/api/users/:id', profileController.getUser);
+app.get('/api/users/:id', auth.config, profileController.getUser);
 
 
 /*app.get('/auth/profile', passport.authenticate('jwt', { session: false }),

@@ -23,7 +23,7 @@ exports.getUser = function(req, res) {
             if(related.includes('notizie')){
                 related.push('notizie.aggiuntivi');
                 related.push('notizie.evento');
-                related.push('notizie.voti');
+                related.push('notizie.likes');
             }
         }
 

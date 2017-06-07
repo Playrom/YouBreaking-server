@@ -5,8 +5,8 @@ var bookshelf = require('../config/bookshelf');
 var User = require('./User');
 var News = require('./News');
 
-var Voto = bookshelf.Model.extend({
-  tableName: 'voti',
+var Like = bookshelf.Model.extend({
+  tableName: 'likes',
   uuid: true,
   hasTimestamps: true,
 
@@ -21,4 +21,4 @@ var Voto = bookshelf.Model.extend({
 
 });
 
-module.exports = bookshelf.model('Voto',Voto);
+module.exports = bookshelf.model('Like',Like);

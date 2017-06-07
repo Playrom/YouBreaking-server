@@ -53,3 +53,8 @@ exports.passUser = function(req, res, next){
         next();
     })(req, res, next);
 }
+
+exports.config = function(req,res,next){
+    res.header("Content-Type",'application/json');
+    next();
+}

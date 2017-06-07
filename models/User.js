@@ -5,7 +5,7 @@ var bookshelf = require('../config/bookshelf');
 var NotificationToken = require('./NotificationToken');
 var Token = require('./Token');
 var News = require('./News');
-var Voto = require('./Voto');
+var Like = require('./Like');
 var LocationUser = require('./LocationUser');
 
 var User = bookshelf.Model.extend({
@@ -46,71 +46,26 @@ var User = bookshelf.Model.extend({
       var md5 = crypto.createHash('md5').update(this.get('email')).digest('hex');
       return 'https://gravatar.com/avatar/' + md5 + '?s=200&d=retro';
     },
-    score : function(){
-      var score = 0;
-      var notizie = this.related('notizie').toJSON();
-      if(notizie){
-        for(var i = 0 ; i < notizie.length ; i++){
-          for(var k = 0; k < notizie[i]["voti"].length ; k++){
-            switch (notizie[i]["voti"][k]["voto"]) {
-              case "UP":
-                score = score + 1 ;
-                break;
-              case "AUTHOR_UP":
-                score = score + 2 ;
-                break;
-              case "EDITOR_UP":
-                score = score + 3 ;
-                break;
-              case "MOD_UP":
-                score = score + 5 ;
-                break;
-              case "ADMIN_UP":
-                score = score + 5 ;
-                break;
-              case "DOWN":
-                score = score - 1 ;
-                break;
-              case "AUTHOR_DOWN":
-                score = score - 2 ;
-                break;
-              case "EDITOR_DOWN":
-                score = score - 3 ;
-                break;
-              case "MOD_DOWN":
-                score = score - 5 ;
-                break;
-              case "ADMIN_DOWN":
-                score = score - 5 ;
-                break;
-              default:
-                break;
-            }
-          }
-        }
-      }
-      return score;
+
+    tokens: function(){
+      return this.hasMany(Token);
+    },
+
+    notificationTokens: function(){
+      return this.hasMany('NotificationToken');
+    },
+
+    notizie: function(){
+      return this.hasMany('News');
+    },
+
+    likes : function(){
+      return this.hasMany('Like');
+    },
+
+    location : function(){
+      return this.hasOne(LocationUser);
     }
-  },
-
-  tokens: function(){
-    return this.hasMany(Token);
-  },
-
-  notificationTokens: function(){
-    return this.hasMany('NotificationToken');
-  },
-
-  notizie: function(){
-    return this.hasMany('News');
-  },
-
-  voti : function(){
-    return this.hasMany('Voto');
-  },
-
-  location : function(){
-    return this.hasOne(LocationUser);
   }
 });
 
